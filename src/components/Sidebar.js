@@ -3,26 +3,36 @@ import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, FileText, Settings, LogOut, ShoppingCart, Package } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
-const Sidebar = () => {
+const Sidebar = ({ closeMobile }) => {
   const { pathname } = useLocation();
   const { logout, user } = useAuth();
 
-  const links = [
+  const isAdmin = user?.role === "admin";
+  
+  const staffLinks = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
     { name: "Present Stock", path: "/stock", icon: Package },
     { name: "Invoices", path: "/invoice", icon: FileText },
     { name: "Sell Reports", path: "/sell-report", icon: ShoppingCart },
-    { name: "Admin", path: "/admin", icon: Settings },
   ];
 
+  const adminLinks = [
+    { name: "System Overview", path: "/admin", icon: LayoutDashboard },
+    { name: "Live Stock", path: "/stock", icon: Package },
+    { name: "Invoice History", path: "/invoice", icon: FileText },
+    { name: "Sell Reports", path: "/sell-report", icon: ShoppingCart },
+  ];
+
+  const links = isAdmin ? adminLinks : staffLinks;
+
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${isAdmin ? "admin-sidebar" : ""}`}>
       <div className="sidebar-header">
-        <h2>Inventory v1</h2>
+        <h2>{isAdmin ? "System Admin" : "Inventory v1"}</h2>
       </div>
       
       <div className="user-info">
-        <div className="avatar">
+        <div className={`avatar ${isAdmin ? "admin-avatar" : ""}`}>
           {user?.name?.charAt(0) || "A"}
         </div>
         <div className="details">
@@ -40,6 +50,7 @@ const Sidebar = () => {
               key={link.path}
               to={link.path}
               className={`nav-item ${isActive ? "active" : ""}`}
+              onClick={closeMobile}
             >
               <Icon size={20} />
               <span>{link.name}</span>

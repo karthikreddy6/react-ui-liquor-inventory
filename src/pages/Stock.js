@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, RefreshCw, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { Search, RefreshCw, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Edit3 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
-const API_BASE = "http://192.168.1.114:5000";
+import { API_BASE } from "../apiConfig";
 
 const Stock = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, user } = useAuth();
   const [stock, setStock] = useState([]); 
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -15,9 +14,37 @@ const Stock = () => {
     return localStorage.getItem("stock_isShortView") === "true";
   });
   
-  // Multi-sort config: array of { key, direction }
-  // Removed localStorage persistence for sorting as requested
+  const isAdmin = user?.role === "admin";
   const [sortConfig, setSortConfig] = useState([]);
+
+  const handleQuickEdit = async (item) => {
+    const cases = window.prompt(`Edit ${item.brand_name}\nNew Total Cases:`, item.total_cases);
+    if (cases === null) return;
+    const bottles = window.prompt("New Total Bottles:", item.total_bottles);
+    if (bottles === null) return;
+    const rate = window.prompt("New Rate per Case:", item.rate_per_case);
+    if (rate === null) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/stock/${item.id}`, {
+        method: "PATCH",
+        headers: { 
+          "Authorization": token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          total_cases: Number(cases),
+          total_bottles: Number(bottles),
+          rate_per_case: Number(rate)
+        })
+      });
+      if (!res.ok) throw new Error("Update failed");
+      alert("Updated successfully!");
+      fetchStock(); // Refresh list
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const currency = useMemo(() => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }), []);
   const number = useMemo(() => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }), []);
@@ -196,10 +223,10 @@ const Stock = () => {
             <span className="label">Total Valuation</span>
             <span className="value highlight">{currency.format(summary.total_price_all_items || 0)}</span>
           </div>
-          <div className="card summary-item">
+          {/* <div className="card summary-item">
             <span className="label">Data Source</span>
-            <span className="value text-small">Live API</span>
-          </div>
+            <span className="value text-small"></span>
+          </div> */}
         </div>
       )}
 
@@ -255,6 +282,7 @@ const Stock = () => {
                     </th>
                   </>
                 )}
+                {isAdmin && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -277,11 +305,18 @@ const Stock = () => {
                         <td className="text-small text-muted">{item.last_invoice_date || "-"}</td>
                       </>
                     )}
+                    {isAdmin && (
+                      <td>
+                        <button className="btn-icon" onClick={() => handleQuickEdit(item)} title="Quick Edit">
+                          <Edit3 size={16} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={isShortView ? 5 : 9} className="text-center">
+                  <td colSpan={isAdmin ? (isShortView ? 6 : 10) : (isShortView ? 5 : 9)} className="text-center">
                     {loading ? "Loading inventory data..." : "No items found matching your search."}
                   </td>
                 </tr>

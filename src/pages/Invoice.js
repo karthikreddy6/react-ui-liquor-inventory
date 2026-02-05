@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Upload, AlertTriangle, Eye, EyeOff, History, Download } from "lucide-react";
+import { Upload, AlertTriangle, Eye, EyeOff, History, Download, Trash2, Edit3 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
-const API_BASE = "http://192.168.1.114:5000";
+import { API_BASE } from "../apiConfig";
 
 const normalizeDate = (dateStr) => {
   if (!dateStr) return "";
@@ -34,6 +33,7 @@ const formatDateForDisplay = (dateStr) => {
 
 const Invoice = () => {
   const { token, logout, user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [view, setView] = useState("history"); // 'upload', 'history'
   const [file, setFile] = useState(null);
   const [invoice, setInvoice] = useState(null);
@@ -42,6 +42,47 @@ const Invoice = () => {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showRaw, setShowRaw] = useState(false);
+
+  const handleDeleteInvoice = async (invoiceNumber) => {
+    if (!window.confirm(`Are you sure you want to permanently delete Invoice ${invoiceNumber}?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/invoices/${invoiceNumber}`, {
+        method: "DELETE",
+        headers: { "Authorization": token }
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      alert("Invoice deleted successfully");
+      fetchHistory();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleEditInvoice = async (inv) => {
+    const newNumber = window.prompt("New Invoice Number:", inv.invoice_number);
+    if (newNumber === null) return;
+    const newDate = window.prompt("New Invoice Date (YYYY-MM-DD):", inv.invoice_date);
+    if (newDate === null) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/invoices/${inv.invoice_number}`, {
+        method: "PATCH",
+        headers: { 
+          "Authorization": token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          invoice_number: newNumber,
+          invoice_date: newDate
+        })
+      });
+      if (!res.ok) throw new Error("Update failed");
+      alert("Invoice updated successfully");
+      fetchHistory();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
 
   const currency = useMemo(() => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }), []);
   const number = useMemo(() => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }), []);
@@ -179,9 +220,21 @@ const Invoice = () => {
                   </td>
                   <td>{inv.retailer_code}</td>
                   <td>
-                    <button className="btn-icon" onClick={() => handleDownload(inv.invoice_number)} title="Download PDF">
-                        <Download size={16}/>
-                    </button>
+                    <div className="flex-gap">
+                        <button className="btn-icon" onClick={() => handleDownload(inv.invoice_number)} title="Download PDF">
+                            <Download size={16}/>
+                        </button>
+                        {isAdmin && (
+                            <>
+                                <button className="btn-icon" onClick={() => handleEditInvoice(inv)} title="Edit Invoice">
+                                    <Edit3 size={16} className="text-primary"/>
+                                </button>
+                                <button className="btn-icon text-danger" onClick={() => handleDeleteInvoice(inv.invoice_number)} title="Delete Invoice">
+                                    <Trash2 size={16}/>
+                                </button>
+                            </>
+                        )}
+                    </div>
                   </td>
                 </tr>
               ))

@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { API_BASE } from "../apiConfig";
 
 const AuthContext = createContext(null);
-
-const API_BASE = "http://192.168.1.114:5000";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -28,6 +27,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     if (!username || !password) return { success: false, message: "Username and password are required" };
+    setToken(null); // Clear stale token before new attempt
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
@@ -71,6 +71,7 @@ export const AuthProvider = ({ children }) => {
 
   const adminLogin = async (username, password) => {
     if (!username || !password) return { success: false, message: "Admin credentials required" };
+    setToken(null); // Clear stale token before new attempt
     try {
       // Safe base64 encoding for Basic Auth
       const basicAuth = btoa(unescape(encodeURIComponent(`${username}:${password}`)));

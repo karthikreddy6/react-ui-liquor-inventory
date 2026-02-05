@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Save, AlertCircle, ShoppingCart, History, Edit, CheckCircle, X, ArrowRight, ArrowLeft, Download, ChevronsUpDown, ChevronUp, ChevronDown, Search } from "lucide-react";
+import { Save, AlertCircle, ShoppingCart, History, Edit, CheckCircle, X, ArrowRight, ArrowLeft, Download, ChevronsUpDown, ChevronUp, ChevronDown, Search, RefreshCw, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
-const API_BASE = "http://192.168.1.114:5000";
+import { API_BASE } from "../apiConfig";
 
 // Date Helpers
 const normalizeDate = (dateStr) => {
@@ -35,7 +34,7 @@ const formatDateForDisplay = (dateStr) => {
 
 // --- Sub-Components (Clean UI) ---
 
-const HistoryView = ({ reportHistory, currency, onDownload }) => (
+const HistoryView = ({ reportHistory, currency, onDownload, isAdmin, onDeleteReport, onDeleteFinance }) => (
   <div className="card table-card fade-in">
      <div className="table-responsive">
         <table>
@@ -66,9 +65,21 @@ const HistoryView = ({ reportHistory, currency, onDownload }) => (
                     {report.edit_count > 0 ? <span className="badge warning">Edited</span> : <span className="badge success">Final</span>}
                   </td>
                   <td>
-                    <button className="btn-icon" onClick={() => onDownload(report.report_date)} title="Download PDF">
-                        <Download size={16}/>
-                    </button>
+                    <div className="flex-gap">
+                        <button className="btn-icon" onClick={() => onDownload(report.report_date)} title="Download PDF">
+                            <Download size={16}/>
+                        </button>
+                        {isAdmin && (
+                            <>
+                                <button className="btn-icon" onClick={() => onDeleteFinance(report.report_date)} title="Reset Finance (Delete Finance Only)">
+                                    <RefreshCw size={16} className="text-primary"/>
+                                </button>
+                                <button className="btn-icon text-danger" onClick={() => onDeleteReport(report.report_date)} title="Delete Full Report">
+                                    <Trash2 size={16}/>
+                                </button>
+                            </>
+                        )}
+                    </div>
                   </td>
                 </tr>
               ))
@@ -357,6 +368,7 @@ const ReportForm = ({
 
 const SellReport = () => {
   const { token, user, logout } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [view, setView] = useState("history"); 
   const [items, setItems] = useState([]);
   const [reportHistory, setReportHistory] = useState([]);
@@ -369,6 +381,32 @@ const SellReport = () => {
   const [settlement, setSettlement] = useState({ lastBalance: 0, upi_phonepay: "", cash: "", expenses: [{ name: "", amount: "" }] });
   const [sortConfig, setSortConfig] = useState([]);
   const [search, setSearch] = useState("");
+
+  const handleDeleteReport = async (date) => {
+    if (!window.confirm(`Permanently delete Sell Report for ${date}?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/reports/sell-reports/${date}`, {
+        method: "DELETE",
+        headers: { "Authorization": token }
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      alert("Report deleted");
+      fetchHistory();
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleDeleteFinance = async (date) => {
+    if (!window.confirm(`Permanently reset Finance data for ${date}?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/sell-finance/${date}`, {
+        method: "DELETE",
+        headers: { "Authorization": token }
+      });
+      if (!res.ok) throw new Error("Reset failed");
+      alert("Finance reset");
+      fetchHistory();
+    } catch (err) { alert(err.message); }
+  };
 
   const currency = useMemo(() => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }), []);
   const number = useMemo(() => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }), []);
@@ -579,7 +617,7 @@ const SellReport = () => {
         </div>
       </header>
       {error && <div className="error-banner"><AlertCircle size={16}/> {error}</div>}
-      {view === "history" ? <HistoryView reportHistory={reportHistory} currency={currency} onDownload={handleDownload} /> : 
+      {view === "history" ? <HistoryView reportHistory={reportHistory} currency={currency} onDownload={handleDownload} isAdmin={isAdmin} onDeleteReport={handleDeleteReport} onDeleteFinance={handleDeleteFinance} /> : 
         <ReportForm  
           view={view} reportDate={reportDate} reportExistsForDate={reportExistsForDate} user={user} setReportDate={setReportDate} 
           lastInvoiceDate={lastInvoiceDate} loading={loading} processedItems={processedItems} handleInputChange={handleInputChange} 

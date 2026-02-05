@@ -38,7 +38,7 @@ function App() {
               <DashboardLayout />
             </PrivateRoute>
           }>
-            <Route index element={<Dashboard />} />
+            <Route index element={<RoleBasedHome />} />
             <Route path="invoice" element={<Invoice />} />
             <Route path="stock" element={<Stock />} />
             <Route path="sell-report" element={<SellReport />} />
@@ -51,5 +51,11 @@ function App() {
     </AuthProvider>
   );
 }
+
+const RoleBasedHome = () => {
+  const { user } = useAuth();
+  if (user?.role === "admin") return <Navigate to="/admin" replace />;
+  return <Dashboard />;
+};
 
 export default App;

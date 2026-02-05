@@ -1,8 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { TrendingUp, Package, AlertCircle, DollarSign, FileText, CheckCircle, Wallet } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
-const API_BASE = "http://192.168.1.114:5000";
+import { API_BASE } from "../apiConfig";
 
 const StatCard = ({ title, value, icon: Icon, color, subtext }) => (
   <div className="stat-card">
