@@ -1,0 +1,100 @@
+React Update Notes (2026-02-04)
+
+Overview
+- The backend now enforces sell report generation against the last invoice date.
+- Supervisor creates the daily sell report.
+- Owner can edit only the latest sell report and only once.
+- Invoice uploads are allowed for owner and supervisor but retailer code must be 2500552.
+- New list endpoints show invoice history and sell report history.
+
+1) Sell Report Flow (Supervisor)
+What to build:
+- A date input field before creating sell report.
+- Fetch and display "last invoice date" so the user knows which date is allowed.
+Rules:
+- report_date is required.
+- report_date must match the latest invoice date.
+- Only one sell report per date is allowed.
+Backend:
+- POST /seller/sell-report
+  - Role: supervisor
+  - Body example:
+    {
+      "report_date": "2026-01-10",
+      "items": [{ "stock_id": 12, "closing_cases": 3, "closing_bottles": 2 }]
+    }
+Error cases:
+- 400 "report_date is required"
+- 400 "report_date must match last invoice date"
+- 409 "Sell report already created for this date"
+
+2) Sell Report Edit (Owner Only)
+What to build:
+- A separate "Edit last sell report" screen only for owner.
+- Use last created report; no date picker needed.
+Rules:
+- Only the latest sell report can be edited.
+- Only one edit is allowed.
+Backend:
+- POST /seller/sell-report/edit-last
+  - Role: owner
+  - Body: { "items": [{ "stock_id", "closing_cases", "closing_bottles" }] }
+Error cases:
+- 404 "no sell report found"
+- 409 "sell report already edited once"
+
+3) Sell Report History (Owner + Supervisor)
+What to show:
+- List of sell report batches with who created and when, and edit info.
+Backend:
+- GET /reports/sell-reports
+  - Returns:
+    {
+      "count": 3,
+      "items": [{
+        "report_date": "2026-01-10",
+        "created_at": "2026-01-10T18:25:00",
+        "created_by": "supervisor",
+        "total_items": 120,
+        "edited_by": "owner",
+        "edited_at": "2026-01-10T19:10:00",
+        "edit_count": 1
+      }]
+    }
+
+4) Invoice Upload (Owner + Supervisor)
+Rules:
+- Upload allowed for owner and supervisor.
+- Retailer code must be exactly 2500552.
+- If code mismatch, upload is rejected.
+Backend:
+- POST /upload
+  - Role: owner or supervisor
+Error case:
+- 400 "Retailer code mismatch. Expected 2500552."
+
+5) Invoice History (Owner + Supervisor)
+What to show:
+- Invoice number, invoice date, uploaded date, uploaded by.
+Backend:
+- GET /reports/invoices
+  - Returns:
+    {
+      "count": 25,
+      "items": [{
+        "invoice_number": "ICDC007030126028381",
+        "invoice_date": "2026-01-10",
+        "uploaded_at": "2026-01-10T12:10:00",
+        "uploaded_by": "supervisor",
+        "retailer_code": "2500552"
+      }]
+    }
+
+6) UI Changes Summary
+- Add date field before creating sell report; validate it against last invoice date.
+- Disable "Create Sell Report" if report already exists for that date.
+- Add "Edit Last Sell Report" button for owner only.
+- Add History pages:
+  - Invoices history using /reports/invoices.
+  - Sell reports history using /reports/sell-reports.
+- Display who uploaded invoices and who created/edited sell reports.

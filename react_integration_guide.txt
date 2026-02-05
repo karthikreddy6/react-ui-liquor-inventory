@@ -1,0 +1,57 @@
+React Integration Guide
+
+Base URL
+- http://127.0.0.1:5000
+
+1) Login
+- Endpoint: POST /auth/login
+- Body:
+  {
+    "username": "owner",
+    "password": "owner123"
+  }
+- Save response.access_token to localStorage (or secure storage)
+
+2) Create API client (Axios example)
+- Add Authorization header for protected routes:
+  Authorization: Bearer <token>
+
+3) Fetch stock list
+- GET /stock
+- Requires JWT token
+- Use this list to show current stock in the UI
+
+4) Update stock after today sales
+- POST /seller/stock-update
+- Requires JWT token
+- Body:
+  {
+    "stock_id": 12,
+    "available_cases": 50
+  }
+  or
+  {
+    "brand_number": "1024",
+    "pack_size_case": 12,
+    "pack_size_quantity_ml": 750,
+    "available_cases": 50
+  }
+- Server will compute bottles based on pack_size_case
+
+5) Owner-only endpoints
+- POST /upload
+- GET /admin
+- GET /admin/status
+- GET /admin/db-summary
+
+Recommended React flow
+- Login page -> store token
+- Stock page -> call GET /stock
+- Update form -> call POST /seller/stock-update
+- If 401 -> redirect to login
+- If 403 -> show "No permission"
+
+Notes
+- Different brands have different bottles per case, so user enters cases only.
+- total_bottles = available_cases * pack_size_case
+- total_amount is recalculated on server

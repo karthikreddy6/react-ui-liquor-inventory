@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Package, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, LogOut, ShoppingCart, Package } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const Sidebar = () => {
@@ -9,8 +9,9 @@ const Sidebar = () => {
 
   const links = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
-    { name: "Invoice Upload", path: "/invoice", icon: FileText },
-    { name: "Stock View", path: "/stock", icon: Package },
+    { name: "Present Stock", path: "/stock", icon: Package },
+    { name: "Invoices", path: "/invoice", icon: FileText },
+    { name: "Sell Reports", path: "/sell-report", icon: ShoppingCart },
     { name: "Admin", path: "/admin", icon: Settings },
   ];
 

@@ -1,21 +1,39 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { Lock, Loader } from "lucide-react";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [error, setError] = useState("");
-  const { login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { login, adminLogin } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (login(username, password)) {
+    if (!username || !password) {
+      setError("Please enter both username and password");
+      return;
+    }
+    
+    setLoading(true);
+    setError("");
+    
+    let result;
+    if (isAdminMode) {
+      result = await adminLogin(username, password);
+    } else {
+      result = await login(username, password);
+    }
+    
+    if (result.success) {
       navigate("/");
     } else {
-      setError("Invalid credentials (try admin/password)");
+      setError(result.message || "An unexpected error occurred");
+      setLoading(false);
     }
   };
 
@@ -24,10 +42,25 @@ const Login = () => {
       <div className="login-card">
         <div className="login-header">
           <div className="icon-circle">
-            <Lock size={24} color="#6366f1" />
+            <Lock size={24} color={isAdminMode ? "#ef4444" : "#6366f1"} />
           </div>
-          <h2>Welcome Back</h2>
-          <p>Sign in to your inventory console</p>
+          <h2>{isAdminMode ? "Admin Console" : "Welcome Back"}</h2>
+          <p>{isAdminMode ? "System administration access" : "Sign in to your inventory console"}</p>
+        </div>
+
+        <div className="login-mode-toggle">
+            <button 
+                className={!isAdminMode ? "active" : ""} 
+                onClick={() => { setIsAdminMode(false); setError(""); }}
+            >
+                Staff Login
+            </button>
+            <button 
+                className={isAdminMode ? "active admin" : ""} 
+                onClick={() => { setIsAdminMode(true); setError(""); }}
+            >
+                Admin Login
+            </button>
         </div>
         
         <form onSubmit={handleSubmit}>
@@ -39,6 +72,7 @@ const Login = () => {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
               autoFocus
+              disabled={loading}
             />
           </div>
           
@@ -49,16 +83,26 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              disabled={loading}
             />
           </div>
 
           {error && <div className="error-message">{error}</div>}
 
-          <button type="submit" className="login-btn">Sign In</button>
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? <span className="flex-center"><Loader size={16} className="spin"/> Signing in...</span> : "Sign In"}
+          </button>
         </form>
         
         <div className="login-footer">
-          <p>Demo Credentials: <strong>admin</strong> / <strong>password</strong></p>
+          {isAdminMode ? (
+            <p>Admin: Use <strong>System Credentials</strong> (Basic Auth)</p>
+          ) : (
+            <div className="demo-credentials">
+              <p>Owner: <strong>owner</strong> / <strong>owner123</strong></p>
+              <p>Supervisor: <strong>supervisor</strong> / <strong>super123</strong></p>
+            </div>
+          )}
         </div>
       </div>
     </div>

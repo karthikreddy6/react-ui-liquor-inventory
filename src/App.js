@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Invoice from "./pages/Invoice";
 import Stock from "./pages/Stock";
 import Admin from "./pages/Admin";
+import SellReport from "./pages/SellReport";
 import "./App.css";
 
 // Private Route Wrapper
@@ -40,6 +41,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="invoice" element={<Invoice />} />
             <Route path="stock" element={<Stock />} />
+            <Route path="sell-report" element={<SellReport />} />
             <Route path="admin" element={<Admin />} />
           </Route>
 

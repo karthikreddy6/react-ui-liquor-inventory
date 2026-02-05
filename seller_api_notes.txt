@@ -1,0 +1,39 @@
+API notes for React (seller update)
+
+Base URL
+- http://127.0.0.1:5000
+
+1) Read current stock (seller uses this to see present stock)
+- GET /stock
+- Response: JSON list of stock items with fields like id, brand_name, pack_size_case, pack_size_quantity_ml, total_cases, total_bottles
+
+2) Update stock after today's sales
+- POST /seller/stock-update
+- Content-Type: application/json
+- Body (by id):
+  {
+    "stock_id": 12,
+    "available_cases": 50
+  }
+- Body (by composite keys):
+  {
+    "brand_number": "1024",
+    "pack_size_case": 12,
+    "pack_size_quantity_ml": 750,
+    "available_cases": 50
+  }
+
+Rules
+- Seller enters available cases after today's sale.
+- Bottles are computed by server using pack_size_case.
+  Example: if pack_size_case = 12 and available_cases = 50, then total_bottles = 600.
+  If pack_size_case = 24, then total_bottles = 1200.
+- total_amount is recalculated from unit_rate_per_bottle (if present) or rate_per_case.
+
+Response (success)
+- { status, stock_id, brand_number, brand_name, pack_size_case, pack_size_quantity_ml, total_cases, total_bottles, total_amount }
+
+Errors
+- 400 if available_cases is missing or invalid
+- 400 if stock lookup keys are incomplete
+- 404 if stock item not found
