@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Lock, Loader } from "lucide-react";
+import { Wine, Loader } from "lucide-react";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -42,9 +42,9 @@ const Login = () => {
       <div className="login-card">
         <div className="login-header">
           <div className="icon-circle">
-            <Lock size={24} color={isAdminMode ? "#ef4444" : "#6366f1"} />
+            <Wine size={24} color={isAdminMode ? "#ef4444" : "#6366f1"} />
           </div>
-          <h2>{isAdminMode ? "Admin Console" : "Welcome Back"}</h2>
+          <h2>{isAdminMode ? "Admin Console" : "wines_cases"}</h2>
           <p>{isAdminMode ? "System administration access" : "Sign in to your inventory console"}</p>
         </div>
 

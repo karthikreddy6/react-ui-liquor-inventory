@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, LogOut, ShoppingCart, Package } from "lucide-react";
+import { LayoutDashboard, FileText, Settings, LogOut, ShoppingCart, Package, Wine } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const Sidebar = ({ closeMobile }) => {
@@ -28,7 +28,8 @@ const Sidebar = ({ closeMobile }) => {
   return (
     <div className={`sidebar ${isAdmin ? "admin-sidebar" : ""}`}>
       <div className="sidebar-header">
-        <h2>{isAdmin ? "System Admin" : "Inventory v1"}</h2>
+        <Wine size={24} className="text-primary mr-2" />
+        <h2>{isAdmin ? "Admin Console" : "wines_cases"}</h2>
       </div>
       
       <div className="user-info">

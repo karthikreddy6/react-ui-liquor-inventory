@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Wine } from "lucide-react";
 
 const DashboardLayout = () => {
   const { user } = useAuth();
@@ -18,7 +18,8 @@ const DashboardLayout = () => {
         <button className="menu-toggle" onClick={toggleSidebar}>
           {isSidebarOpen ? <X size={24}/> : <Menu size={24}/>}
         </button>
-        <span className="mobile-title">{isAdmin ? "Admin Console" : "Inventory v1"}</span>
+        <Wine size={20} className="ml-2 text-primary" />
+        <span className="mobile-title">{isAdmin ? "Admin Console" : "wines_cases"}</span>
       </header>
 
       {/* Sidebar with overlay for mobile */}
