@@ -19,7 +19,7 @@ const DashboardLayout = () => {
           {isSidebarOpen ? <X size={24}/> : <Menu size={24}/>}
         </button>
         <Wine size={20} className="ml-2 text-primary" />
-        <span className="mobile-title">{isAdmin ? "Admin Console" : "wines_cases"}</span>
+        <span className="mobile-title">{isAdmin ? "Admin Console" : "Royal wines"}</span>
       </header>
 
       {/* Sidebar with overlay for mobile */}

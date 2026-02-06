@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard"
 import Invoice from "./pages/Invoice";
 import Stock from "./pages/Stock";
 import Admin from "./pages/Admin";
