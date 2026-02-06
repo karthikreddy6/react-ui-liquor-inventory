@@ -29,7 +29,7 @@ const Sidebar = ({ closeMobile }) => {
     <div className={`sidebar ${isAdmin ? "admin-sidebar" : ""}`}>
       <div className="sidebar-header">
         <Wine size={24} className="text-primary mr-2" />
-        <h2>{isAdmin ? "Admin Console" : "Royal Wines"}</h2>
+        <h2>{isAdmin ? "Admin Console" : "Royal wines"}</h2>
       </div>
       
       <div className="user-info">
