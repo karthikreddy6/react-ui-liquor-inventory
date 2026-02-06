@@ -94,16 +94,7 @@ const Login = () => {
           </button>
         </form>
         
-        <div className="login-footer">
-          {isAdminMode ? (
-            <p>Admin: Use <strong>System Credentials</strong> (Basic Auth)</p>
-          ) : (
-            <div className="demo-credentials">
-              <p>Owner: <strong>owner</strong> / <strong>owner123</strong></p>
-              <p>Supervisor: <strong>supervisor</strong> / <strong>super123</strong></p>
-            </div>
-          )}
-        </div>
+       
       </div>
     </div>
   );
