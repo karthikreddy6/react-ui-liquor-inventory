@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Save, AlertCircle, ShoppingCart, History, Edit, CheckCircle, X, ArrowRight, ArrowLeft, Download, ChevronsUpDown, ChevronUp, ChevronDown, Search, RefreshCw, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
+import ProcessingOverlay from "../components/ProcessingOverlay";
+import { toast } from "react-hot-toast";
+import { motion } from "framer-motion";
 
 // Date Helpers
 const normalizeDate = (dateStr) => {
@@ -33,6 +36,68 @@ const formatDateForDisplay = (dateStr) => {
 };
 
 // --- Sub-Components (Clean UI) ---
+
+const ErrorModal = ({ errorData, onClose, items = [] }) => {
+  if (!errorData) return null;
+  
+  const isDetailed = errorData.debug && errorData.error;
+  const targetItem = isDetailed ? items.find(it => it.stock_id === errorData.debug.stock_id) : null;
+  
+  return (
+    <div className="modal-overlay">
+      <motion.div 
+        className="modal-content" 
+        style={{ maxWidth: '600px' }}
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+      >
+        <div className="modal-header bg-danger text-white">
+          <h3 className="text-white"><AlertCircle size={20} className="mr-2" /> Validation Error</h3>
+          <button onClick={onClose} className="close-btn text-white"><X size={24}/></button>
+        </div>
+        <div className="modal-body">
+          <div className="alert-danger p-3 rounded mb-3" style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b' }}>
+            <strong>Error:</strong> {errorData.error || errorData.message || "An unexpected error occurred"}
+          </div>
+
+          {targetItem && (
+            <div className="brand-alert mb-3 p-3 rounded" style={{ background: '#eff6ff', border: '1px solid #dbeafe' }}>
+               <h4 className="text-primary text-small uppercase mb-1">Affected Brand</h4>
+               <div className="fw-bold" style={{ fontSize: '1.1rem' }}>{targetItem.brand_name}</div>
+               <div className="text-muted text-small">Brand Number: #{targetItem.brand_number}</div>
+            </div>
+          )}
+          
+          {isDetailed && (
+            <div className="debug-info mt-3">
+              <h4 className="text-small text-muted uppercase mb-2">Technical Details</h4>
+              <div className="card bg-light p-3" style={{ background: '#f8fafc', fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {Object.entries(errorData.debug).map(([key, value]) => (
+                    <div key={key} className="debug-item border-bottom pb-1">
+                      <span className="text-muted">{key.replace(/_/g, ' ')}:</span> <span className="fw-bold">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="modal-footer">
+          <motion.button 
+            className="btn-secondary" 
+            onClick={onClose}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Close and Fix Entry
+          </motion.button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 const HistoryView = ({ reportHistory, currency, onDownload, isAdmin, onDeleteReport, onDeleteFinance }) => (
   <div className="card table-card fade-in">
@@ -373,8 +438,10 @@ const SellReport = () => {
   const [items, setItems] = useState([]);
   const [reportHistory, setReportHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [detailedError, setDetailedError] = useState(null);
   const [reportDate, setReportDate] = useState("");
   const [lastInvoiceDate, setLastInvoiceDate] = useState("");
   const [step, setStep] = useState(1);
@@ -390,9 +457,9 @@ const SellReport = () => {
         headers: { "Authorization": token }
       });
       if (!res.ok) throw new Error("Delete failed");
-      alert("Report deleted");
+      toast.success("Report deleted successfully");
       fetchHistory();
-    } catch (err) { alert(err.message); }
+    } catch (err) { toast.error(err.message); }
   };
 
   const handleDeleteFinance = async (date) => {
@@ -403,9 +470,9 @@ const SellReport = () => {
         headers: { "Authorization": token }
       });
       if (!res.ok) throw new Error("Reset failed");
-      alert("Finance reset");
+      toast.success("Finance reset successfully");
       fetchHistory();
-    } catch (err) { alert(err.message); }
+    } catch (err) { toast.error(err.message); }
   };
 
   const currency = useMemo(() => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }), []);
@@ -558,26 +625,61 @@ const SellReport = () => {
   const totalSellItems = processedItems.filter(i => i.hasEntry).reduce((sum, item) => sum + item.sellBottles, 0);
 
   const handleFullSubmit = async () => {
-    setSubmitting(true); setError("");
+    setSubmitting(true); 
+    setIsProcessing(true);
+    setError("");
+    setDetailedError(null);
+
+    // Random delay between 4-10 seconds
+    const processingDelay = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
+
     try {
       const activeItems = items.filter(item => item.closing_cases !== "" || item.closing_bottles !== "");
-      const reportRes = await fetch(`${API_BASE}${view === "edit" ? "/seller/sell-report/edit-last" : "/seller/sell-report"}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
-        body: JSON.stringify({ report_date: formatDateForDisplay(reportDate), items: activeItems.map(item => ({ stock_id: item.stock_id, closing_cases: Number(item.closing_cases) || 0, closing_bottles: Number(item.closing_bottles) || 0 })) })
-      });
-      if (!reportRes.ok) throw new Error((await reportRes.json()).message || "Failed to submit report");
+      
+      const submitLogic = async () => {
+          const reportRes = await fetch(`${API_BASE}${view === "edit" ? "/seller/sell-report/edit-last" : "/seller/sell-report"}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": token },
+            body: JSON.stringify({ report_date: formatDateForDisplay(reportDate), items: activeItems.map(item => ({ stock_id: item.stock_id, closing_cases: Number(item.closing_cases) || 0, closing_bottles: Number(item.closing_bottles) || 0 })) })
+          });
+          
+          if (!reportRes.ok) {
+            const data = await reportRes.json();
+            throw data; // Throw the whole JSON object for better error handling
+          }
 
-      const financeRes = await fetch(`${API_BASE}/seller/sell-finance`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
-        body: JSON.stringify({ report_date: formatDateForDisplay(reportDate), upi_phonepay: Number(settlement.upi_phonepay) || 0, cash: Number(settlement.cash) || 0, expenses: settlement.expenses.map(e => ({ name: e.name, amount: Number(e.amount) || 0 })) })
-      });
-      if (!financeRes.ok) throw new Error("Finance submission failed");
+          const financeRes = await fetch(`${API_BASE}/seller/sell-finance`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": token },
+            body: JSON.stringify({ report_date: formatDateForDisplay(reportDate), upi_phonepay: Number(settlement.upi_phonepay) || 0, cash: Number(settlement.cash) || 0, expenses: settlement.expenses.map(e => ({ name: e.name, amount: Number(e.amount) || 0 })) })
+          });
+          
+          if (!financeRes.ok) {
+            const data = await financeRes.json();
+            throw data;
+          }
+          
+          return true;
+      };
 
-      alert("Success!"); setView("history"); setStep(1); fetchHistory();
-    } catch (err) { setError(err.message); }
-    finally { setSubmitting(false); }
+      await Promise.all([
+        submitLogic(),
+        new Promise(resolve => setTimeout(resolve, processingDelay))
+      ]);
+
+      toast.success("Sell Report submitted successfully!"); 
+      setView("history"); setStep(1); fetchHistory();
+    } catch (err) { 
+        console.error("Submission Error:", err);
+        const msg = err.error || err.message || "An unknown error occurred during submission";
+        setError(msg);
+        setDetailedError(err);
+        toast.error(msg); 
+    }
+    finally { 
+        setSubmitting(false); 
+        setIsProcessing(false);
+    }
   };
 
   const handleDownload = async (reportDate) => {
@@ -597,22 +699,51 @@ const SellReport = () => {
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (err) {
-      alert("Failed to download PDF: " + err.message);
+      toast.error("Failed to download PDF: " + err.message);
     }
   };
 
   return (
     <div className="sell-report-page">
+      {isProcessing && <ProcessingOverlay message="Submitting Daily Report..." />}
+      {detailedError && <ErrorModal errorData={detailedError} items={items} onClose={() => setDetailedError(null)} />}
       <header className="page-header">
         <div className="header-content">
           <div><h1>Daily Sell Report</h1><p className="text-muted">{new Date().toDateString()}</p></div>
           <div className="flex-gap">
              {view === "history" ? (
                 <>
-                    {user?.role === "supervisor" && <button className="btn-primary" onClick={() => setView("create")}><ShoppingCart size={16}/> Create Report</button>}
-                    {canEditLast && <button className="btn-secondary" onClick={() => setView("edit")}><Edit size={16}/> Edit Last Report</button>}
+                    {user?.role === "supervisor" && (
+                      <motion.button 
+                        className="btn-primary" 
+                        onClick={() => setView("create")}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <ShoppingCart size={16}/> Create Report
+                      </motion.button>
+                    )}
+                    {canEditLast && (
+                      <motion.button 
+                        className="btn-secondary" 
+                        onClick={() => setView("edit")}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Edit size={16}/> Edit Last Report
+                      </motion.button>
+                    )}
                 </>
-             ) : <button className="btn-secondary" onClick={() => setView("history")}><History size={16}/> View History</button>}
+             ) : (
+               <motion.button 
+                className="btn-secondary" 
+                onClick={() => setView("history")}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+               >
+                <History size={16}/> View History
+               </motion.button>
+             )}
           </div>
         </div>
       </header>

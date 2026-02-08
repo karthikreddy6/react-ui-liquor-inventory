@@ -1,7 +1,8 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, Settings, LogOut, ShoppingCart, Package, Wine } from "lucide-react";
+import { LayoutDashboard, FileText, LogOut, ShoppingCart, Package, Wine } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { motion } from "framer-motion";
 
 const Sidebar = ({ closeMobile }) => {
   const { pathname } = useLocation();
@@ -25,6 +26,19 @@ const Sidebar = ({ closeMobile }) => {
 
   const links = isAdmin ? adminLinks : staffLinks;
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { x: -10, opacity: 0 },
+    visible: { x: 0, opacity: 1 }
+  };
+
   return (
     <div className={`sidebar ${isAdmin ? "admin-sidebar" : ""}`}>
       <div className="sidebar-header">
@@ -42,28 +56,39 @@ const Sidebar = ({ closeMobile }) => {
         </div>
       </div>
 
-      <nav className="nav-menu">
+      <motion.nav 
+        className="nav-menu"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
         {links.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.path;
           return (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`nav-item ${isActive ? "active" : ""}`}
-              onClick={closeMobile}
-            >
-              <Icon size={20} />
-              <span>{link.name}</span>
-            </Link>
+            <motion.div key={link.path} variants={itemVariants}>
+              <Link
+                to={link.path}
+                className={`nav-item ${isActive ? "active" : ""}`}
+                onClick={closeMobile}
+              >
+                <Icon size={20} />
+                <span>{link.name}</span>
+              </Link>
+            </motion.div>
           );
         })}
-      </nav>
+      </motion.nav>
 
-      <button onClick={logout} className="logout-btn">
+      <motion.button 
+        onClick={logout} 
+        className="logout-btn"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
         <LogOut size={20} />
         <span>Logout</span>
-      </button>
+      </motion.button>
     </div>
   );
 };

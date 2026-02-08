@@ -8,6 +8,7 @@ import Invoice from "./pages/Invoice";
 import Stock from "./pages/Stock";
 import Admin from "./pages/Admin";
 import SellReport from "./pages/SellReport";
+import { Toaster } from "react-hot-toast";
 import "./App.css";
 
 // Private Route Wrapper
@@ -29,6 +30,7 @@ const PrivateRoute = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />

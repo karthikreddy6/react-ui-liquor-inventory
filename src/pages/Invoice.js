@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Upload, AlertTriangle, Eye, EyeOff, History, Download, Trash2, Edit3 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
+import ProcessingOverlay from "../components/ProcessingOverlay";
+import { toast } from "react-hot-toast";
 
 const normalizeDate = (dateStr) => {
   if (!dateStr) return "";
@@ -39,6 +41,7 @@ const Invoice = () => {
   const [invoice, setInvoice] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showRaw, setShowRaw] = useState(false);
@@ -51,10 +54,10 @@ const Invoice = () => {
         headers: { "Authorization": token }
       });
       if (!res.ok) throw new Error("Delete failed");
-      alert("Invoice deleted successfully");
+      toast.success("Invoice deleted successfully");
       fetchHistory();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -77,10 +80,10 @@ const Invoice = () => {
         })
       });
       if (!res.ok) throw new Error("Update failed");
-      alert("Invoice updated successfully");
+      toast.success("Invoice updated successfully");
       fetchHistory();
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -118,29 +121,40 @@ const Invoice = () => {
 
   const uploadFile = async () => {
     if (!file) {
-      alert("Please select a PDF file");
+      toast.error("Please select a PDF file");
       return;
     }
 
     if (user?.role === "seller") {
-      alert("Error: Sellers are not authorized to upload invoices.");
+      toast.error("Error: Sellers are not authorized to upload invoices.");
       return;
     }
 
     setLoading(true);
+    setIsProcessing(true);
     setError("");
     setInvoice(null);
+
+    // Random delay between 4-10 seconds
+    const processingDelay = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
 
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${API_BASE}/upload`, { 
+      
+      const uploadPromise = fetch(`${API_BASE}/upload`, { 
         method: "POST", 
         headers: {
             "Authorization": token
         },
         body: formData 
       });
+
+      // Wait for both the upload and the artificial delay
+      const [res] = await Promise.all([
+        uploadPromise,
+        new Promise(resolve => setTimeout(resolve, processingDelay))
+      ]);
 
       if (res.status === 401) {
         logout();
@@ -155,17 +169,23 @@ const Invoice = () => {
       
       // Client-side validation of retailer code
       if (data.invoice?.retailer?.code !== "2500552") {
-         setError(`Upload Rejected: Retailer code is ${data.invoice?.retailer?.code}. Expected 2500552.`);
+         const msg = `Upload Rejected: Retailer code is ${data.invoice?.retailer?.code}. Expected 2500552.`;
+         setError(msg);
+         toast.error(msg);
          setInvoice(null);
          return;
       }
       
       setInvoice(data.invoice);
+      toast.success("Invoice processed successfully!");
     } catch (err) {
       console.error(err);
-      setError(err.message || "Something went wrong while processing the PDF");
+      const msg = err.message || "Something went wrong while processing the PDF";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
+      setIsProcessing(false);
     }
   };
 
@@ -249,6 +269,7 @@ const Invoice = () => {
 
   return (
     <div className="invoice-page">
+      {isProcessing && <ProcessingOverlay message="Analyzing PDF Invoice..." />}
       <header className="page-header">
         <div className="header-content">
           <div>
