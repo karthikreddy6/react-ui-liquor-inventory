@@ -4,7 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
 import ProcessingOverlay from "../components/ProcessingOverlay";
 import { toast } from "react-hot-toast";
-import { motion } from "framer-motion";
 
 // Date Helpers
 const normalizeDate = (dateStr) => {
@@ -45,13 +44,7 @@ const ErrorModal = ({ errorData, onClose, items = [] }) => {
   
   return (
     <div className="modal-overlay">
-      <motion.div 
-        className="modal-content" 
-        style={{ maxWidth: '600px' }}
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-      >
+      <div className="modal-content" style={{ maxWidth: '600px' }}>
         <div className="modal-header bg-danger text-white">
           <h3 className="text-white"><AlertCircle size={20} className="mr-2" /> Validation Error</h3>
           <button onClick={onClose} className="close-btn text-white"><X size={24}/></button>
@@ -85,16 +78,9 @@ const ErrorModal = ({ errorData, onClose, items = [] }) => {
           )}
         </div>
         <div className="modal-footer">
-          <motion.button 
-            className="btn-secondary" 
-            onClick={onClose}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Close and Fix Entry
-          </motion.button>
+          <button className="btn-secondary" onClick={onClose}>Close and Fix Entry</button>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
@@ -714,35 +700,20 @@ const SellReport = () => {
              {view === "history" ? (
                 <>
                     {user?.role === "supervisor" && (
-                      <motion.button 
-                        className="btn-primary" 
-                        onClick={() => setView("create")}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
+                      <button className="btn-primary" onClick={() => setView("create")}>
                         <ShoppingCart size={16}/> Create Report
-                      </motion.button>
+                      </button>
                     )}
                     {canEditLast && (
-                      <motion.button 
-                        className="btn-secondary" 
-                        onClick={() => setView("edit")}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
+                      <button className="btn-secondary" onClick={() => setView("edit")}>
                         <Edit size={16}/> Edit Last Report
-                      </motion.button>
+                      </button>
                     )}
                 </>
              ) : (
-               <motion.button 
-                className="btn-secondary" 
-                onClick={() => setView("history")}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-               >
+               <button className="btn-secondary" onClick={() => setView("history")}>
                 <History size={16}/> View History
-               </motion.button>
+               </button>
              )}
           </div>
         </div>

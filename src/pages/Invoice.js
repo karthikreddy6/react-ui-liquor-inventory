@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Upload, AlertTriangle, Eye, EyeOff, History, Download, Trash2, Edit3 } from "lucide-react";
+import { Upload, AlertTriangle, Eye, EyeOff, History, Download, Trash2, Edit3, CheckCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
 import ProcessingOverlay from "../components/ProcessingOverlay";
@@ -42,6 +42,8 @@ const Invoice = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMsg, setProcessingMsg] = useState("Processing...");
+  const [isConfirmed, setIsConfirmed] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showRaw, setShowRaw] = useState(false);
@@ -119,7 +121,7 @@ const Invoice = () => {
     }
   }, [token, view, fetchHistory]);
 
-  const uploadFile = async () => {
+  const previewFile = async () => {
     if (!file) {
       toast.error("Please select a PDF file");
       return;
@@ -131,9 +133,11 @@ const Invoice = () => {
     }
 
     setLoading(true);
+    setProcessingMsg("Analyzing PDF Invoice...");
     setIsProcessing(true);
     setError("");
     setInvoice(null);
+    setIsConfirmed(false);
 
     // Random delay between 4-10 seconds
     const processingDelay = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
@@ -142,47 +146,82 @@ const Invoice = () => {
       const formData = new FormData();
       formData.append("file", file);
       
-      const uploadPromise = fetch(`${API_BASE}/upload`, { 
+      const previewPromise = fetch(`${API_BASE}/upload/preview`, { 
         method: "POST", 
-        headers: {
-            "Authorization": token
-        },
+        headers: { "Authorization": token },
         body: formData 
       });
 
-      // Wait for both the upload and the artificial delay
+      // Wait for both the preview and the artificial delay
       const [res] = await Promise.all([
-        uploadPromise,
+        previewPromise,
         new Promise(resolve => setTimeout(resolve, processingDelay))
       ]);
 
-      if (res.status === 401) {
-        logout();
-        return;
-      }
-
+      if (res.status === 401) { logout(); return; }
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Upload failed");
-      }
+      if (!res.ok) throw new Error(data.message || "Preview failed");
       
+      const invData = data.preview || data.invoice;
+      if (!invData) throw new Error("Invalid response format");
+
       // Client-side validation of retailer code
-      if (data.invoice?.retailer?.code !== "2500552") {
-         const msg = `Upload Rejected: Retailer code is ${data.invoice?.retailer?.code}. Expected 2500552.`;
+      if (invData.retailer?.code !== "2500552") {
+         const msg = `Upload Rejected: Retailer code is ${invData.retailer?.code}. Expected 2500552.`;
          setError(msg);
          toast.error(msg);
          setInvoice(null);
          return;
       }
       
-      setInvoice(data.invoice);
-      toast.success("Invoice processed successfully!");
+      setInvoice(invData);
+      toast.success("PDF analyzed! Please review the details.");
     } catch (err) {
       console.error(err);
       const msg = err.message || "Something went wrong while processing the PDF";
       setError(msg);
       toast.error(msg);
+    } finally {
+      setLoading(false);
+      setIsProcessing(false);
+    }
+  };
+
+  const confirmUpload = async () => {
+    if (!file || !invoice) return;
+
+    setLoading(true);
+    setProcessingMsg("Saving to Database & Updating Stock...");
+    setIsProcessing(true);
+    setError("");
+
+    const savingDelay = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const uploadPromise = fetch(`${API_BASE}/upload`, { 
+        method: "POST", 
+        headers: { "Authorization": token },
+        body: formData 
+      });
+
+      const [res] = await Promise.all([
+        uploadPromise,
+        new Promise(resolve => setTimeout(resolve, savingDelay))
+      ]);
+
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Final upload failed");
+      
+      toast.success("Invoice saved successfully!");
+      setIsConfirmed(true);
+      fetchHistory(); 
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Failed to save invoice");
     } finally {
       setLoading(false);
       setIsProcessing(false);
@@ -269,7 +308,7 @@ const Invoice = () => {
 
   return (
     <div className="invoice-page">
-      {isProcessing && <ProcessingOverlay message="Analyzing PDF Invoice..." />}
+      {isProcessing && <ProcessingOverlay message={processingMsg} />}
       <header className="page-header">
         <div className="header-content">
           <div>
@@ -298,16 +337,39 @@ const Invoice = () => {
         <>
           <div className="upload-section card">
             <div className="drop-zone">
-              <input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files[0])} id="file-upload" className="file-input" />
+              <input type="file" accept="application/pdf" onChange={(e) => { setFile(e.target.files[0]); setInvoice(null); setIsConfirmed(false); }} id="file-upload" className="file-input" />
               <label htmlFor="file-upload" className="file-label">
                 <Upload size={48} className="icon" />
                 <span>{file ? file.name : "Click to select a PDF invoice"}</span>
               </label>
             </div>
-            <button className="btn-primary" onClick={uploadFile} disabled={loading || !file}>
-              {loading ? "Processing..." : "Upload & Convert"}
-            </button>
-            {error && <div className="error-banner"><AlertTriangle size={16} /> {error}</div>}
+            
+            <div className="flex-gap justify-center mt-4">
+                {!invoice && (
+                    <button className="btn-primary" onClick={previewFile} disabled={loading || !file}>
+                        {loading ? "Analyzing..." : "Analyze PDF Preview"}
+                    </button>
+                )}
+                
+                {invoice && !isConfirmed && (
+                    <>
+                        <button className="btn-secondary" onClick={() => { setInvoice(null); setFile(null); }}>
+                            Cancel
+                        </button>
+                        <button className="btn-primary bg-success" onClick={confirmUpload} disabled={loading}>
+                            {loading ? "Saving..." : "Confirm & Save to Database"}
+                        </button>
+                    </>
+                )}
+
+                {isConfirmed && (
+                    <div className="text-success fw-bold flex-align-center">
+                        <CheckCircle size={20} className="mr-2" /> Invoice Saved Successfully
+                    </div>
+                )}
+            </div>
+
+            {error && <div className="error-banner mt-4"><AlertTriangle size={16} /> {error}</div>}
           </div>
 
           {invoice && (

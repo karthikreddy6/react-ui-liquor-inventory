@@ -19,8 +19,9 @@ const ProcessingOverlay = ({ message = "Processing data..." }) => {
       zIndex: 10000,
     }}>
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -37,7 +38,7 @@ const ProcessingOverlay = ({ message = "Processing data..." }) => {
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           >
-            <Loader2 size={64} className="text-primary" style={{ opacity: 0.2 }} />
+            <Loader2 size={64} style={{ color: '#4f46e5', opacity: 0.2 }} />
           </motion.div>
           <div style={{
             position: 'absolute',
@@ -50,18 +51,18 @@ const ProcessingOverlay = ({ message = "Processing data..." }) => {
           </div>
         </div>
         
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a', fontFamily: 'Inter, sans-serif' }}>
           {message}
         </h3>
-        <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
+        <p style={{ color: '#64748b', fontSize: '0.875rem', fontFamily: 'Inter, sans-serif' }}>
           Please wait while we sync your inventory.
         </p>
         
-        <div style={{ display: 'flex', gap: '4px', marginTop: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '6px', marginTop: '1.5rem' }}>
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              animate={{ opacity: [0.3, 1, 0.3] }}
+              animate={{ opacity: [0.3, 1, 0.3], y: [0, -4, 0] }}
               transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
               style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#4f46e5' }}
             />

@@ -8,6 +8,7 @@ import Invoice from "./pages/Invoice";
 import Stock from "./pages/Stock";
 import Admin from "./pages/Admin";
 import SellReport from "./pages/SellReport";
+import LoadingScreen from "./components/LoadingScreen";
 import { Toaster } from "react-hot-toast";
 import "./App.css";
 
@@ -17,7 +18,7 @@ const PrivateRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return <div className="loading-screen">Loading...</div>;
+    return <LoadingScreen />;
   }
 
   if (!user) {
