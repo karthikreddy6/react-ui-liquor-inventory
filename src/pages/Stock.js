@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Search, RefreshCw, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Edit3 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
+import { toast } from "react-hot-toast";
 
 const Stock = () => {
   const { token, logout, user } = useAuth();
@@ -24,6 +25,19 @@ const Stock = () => {
     if (bottles === null) return;
     const rate = window.prompt("New Rate per Case:", item.rate_per_case);
     if (rate === null) return;
+    const casesValue = Number(cases);
+    const bottlesValue = Number(bottles);
+    const rateValue = Number(rate);
+
+    if (![casesValue, bottlesValue, rateValue].every(Number.isFinite)) {
+      toast.error("Enter valid numeric values for cases, bottles, and rate.");
+      return;
+    }
+
+    if (casesValue < 0 || bottlesValue < 0 || rateValue < 0) {
+      toast.error("Values must be non-negative.");
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE}/admin/stock/${item.id}`, {
@@ -33,16 +47,17 @@ const Stock = () => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          total_cases: Number(cases),
-          total_bottles: Number(bottles),
-          rate_per_case: Number(rate)
+          total_cases: casesValue,
+          total_bottles: bottlesValue,
+          rate_per_case: rateValue
         })
       });
+      if (res.status === 401) { logout(); return; }
       if (!res.ok) throw new Error("Update failed");
-      alert("Updated successfully!");
+      toast.success("Stock updated successfully.");
       fetchStock(); // Refresh list
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message || "Unable to update stock.");
     }
   };
 

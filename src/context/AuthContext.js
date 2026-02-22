@@ -3,24 +3,36 @@ import { API_BASE } from "../apiConfig";
 
 const AuthContext = createContext(null);
 
+const encodeBasicAuth = (username, password) => {
+  const value = `${username}:${password}`;
+  return btoa(String.fromCharCode(...new TextEncoder().encode(value)));
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("inventory_user");
+    const storedUserRaw = localStorage.getItem("inventory_user");
     const storedToken = localStorage.getItem("inventory_token");
     
-    if (storedUser && storedToken) {
-      // Ensure token has a prefix. If not, it's an old Bearer token.
-      let tokenValue = storedToken;
-      if (!tokenValue.startsWith("Bearer ") && !tokenValue.startsWith("Basic ")) {
-        tokenValue = `Bearer ${tokenValue}`;
+    if (storedUserRaw && storedToken) {
+      try {
+        const storedUser = JSON.parse(storedUserRaw);
+        // Ensure token has a prefix. If not, it's an old Bearer token.
+        let tokenValue = storedToken;
+        if (!tokenValue.startsWith("Bearer ") && !tokenValue.startsWith("Basic ")) {
+          tokenValue = `Bearer ${tokenValue}`;
+        }
+        
+        setUser(storedUser);
+        setToken(tokenValue);
+      } catch (err) {
+        console.error("Invalid stored auth payload, resetting session", err);
+        localStorage.removeItem("inventory_user");
+        localStorage.removeItem("inventory_token");
       }
-      
-      setUser(JSON.parse(storedUser));
-      setToken(tokenValue);
     }
     setLoading(false);
   }, []);
@@ -43,9 +55,11 @@ export const AuthProvider = ({ children }) => {
 
       if (data.access_token) {
         const lowerUser = username.toLowerCase();
-        let role = "seller";
-        if (lowerUser === "owner") role = "owner";
-        else if (lowerUser === "supervisor") role = "supervisor";
+        let role = data.role || "seller";
+        if (!data.role) {
+          if (lowerUser === "owner") role = "owner";
+          else if (lowerUser === "supervisor") role = "supervisor";
+        }
 
         const userData = { 
           username, 
@@ -73,8 +87,7 @@ export const AuthProvider = ({ children }) => {
     if (!username || !password) return { success: false, message: "Admin credentials required" };
     setToken(null); // Clear stale token before new attempt
     try {
-      // Safe base64 encoding for Basic Auth
-      const basicAuth = btoa(unescape(encodeURIComponent(`${username}:${password}`)));
+      const basicAuth = encodeBasicAuth(username, password);
       const res = await fetch(`${API_BASE}/admin`, {
         method: "GET",
         headers: { 

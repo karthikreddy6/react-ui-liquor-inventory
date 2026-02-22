@@ -5,6 +5,53 @@ import { API_BASE } from "../apiConfig";
 import ProcessingOverlay from "../components/ProcessingOverlay";
 import { toast } from "react-hot-toast";
 
+const ErrorModal = ({ errorData, onClose }) => {
+  if (!errorData) return null;
+  
+  return (
+    <div className="modal-overlay" style={{ zIndex: 11000 }}>
+      <div className="modal-content" style={{ maxWidth: '600px', borderRadius: '12px', border: 'none' }}>
+        <div className="modal-header" style={{ background: '#ef4444', color: 'white', padding: '1.25rem 1.5rem' }}>
+          <div className="flex-align-center">
+            <AlertTriangle size={24} className="mr-2" />
+            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'white' }}>Processing Failed</h3>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><CheckCircle size={24} style={{ opacity: 0 }}/><AlertTriangle size={24}/></button>
+        </div>
+        
+        <div className="modal-body" style={{ padding: '1.5rem' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <p style={{ color: '#475569', fontSize: '1rem', marginBottom: '0.5rem', fontWeight: '500' }}>The system encountered an error while processing the invoice:</p>
+            <div style={{ background: '#fff1f2', border: '1.5px solid #fecaca', padding: '1rem', borderRadius: '8px', color: '#991b1b', fontWeight: '700', fontSize: '1.05rem' }}>
+              {errorData.error || errorData.message || "Unknown Error"}
+            </div>
+          </div>
+
+          {errorData.details && (
+            <div>
+              <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.75rem', fontWeight: '700' }}>Error Details</h4>
+              <pre style={{ 
+                background: '#f8fafc', 
+                padding: '1rem', 
+                borderRadius: '8px', 
+                fontSize: '0.85rem', 
+                overflow: 'auto',
+                border: '1px solid #e2e8f0',
+                maxHeight: '200px'
+              }}>
+                {JSON.stringify(errorData.details, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+        <div className="modal-footer" style={{ background: '#f8fafc', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn-secondary" onClick={onClose} style={{ fontWeight: '700' }}>Understand & Close</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const normalizeDate = (dateStr) => {
   if (!dateStr) return "";
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
@@ -33,6 +80,8 @@ const formatDateForDisplay = (dateStr) => {
   return `${day}-${monthNames[parseInt(month) - 1] || month}-${year}`;
 };
 
+const isISODate = (value) => /^\d{4}-\d{2}-\d{2}$/.test((value || "").trim());
+
 const Invoice = () => {
   const { token, logout, user } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -45,8 +94,21 @@ const Invoice = () => {
   const [processingMsg, setProcessingMsg] = useState("Processing...");
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [error, setError] = useState("");
+  const [detailedError, setDetailedError] = useState(null);
   const [search, setSearch] = useState("");
   const [showRaw, setShowRaw] = useState(false);
+  const [uploadInputKey, setUploadInputKey] = useState(0);
+
+  const resetUploadForm = () => {
+    setFile(null);
+    setInvoice(null);
+    setIsConfirmed(false);
+    setError("");
+    setDetailedError(null);
+    setSearch("");
+    setShowRaw(false);
+    setUploadInputKey((prev) => prev + 1);
+  };
 
   const handleDeleteInvoice = async (invoiceNumber) => {
     if (!window.confirm(`Are you sure you want to permanently delete Invoice ${invoiceNumber}?`)) return;
@@ -64,10 +126,14 @@ const Invoice = () => {
   };
 
   const handleEditInvoice = async (inv) => {
-    const newNumber = window.prompt("New Invoice Number:", inv.invoice_number);
-    if (newNumber === null) return;
-    const newDate = window.prompt("New Invoice Date (YYYY-MM-DD):", inv.invoice_date);
-    if (newDate === null) return;
+    const newNumber = (window.prompt("New Invoice Number:", inv.invoice_number) || "").trim();
+    if (!newNumber) return;
+    const newDate = (window.prompt("New Invoice Date (YYYY-MM-DD):", inv.invoice_date) || "").trim();
+    if (!newDate) return;
+    if (!isISODate(newDate)) {
+      toast.error("Invoice date must be in YYYY-MM-DD format.");
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE}/admin/invoices/${inv.invoice_number}`, {
@@ -81,6 +147,7 @@ const Invoice = () => {
           invoice_date: newDate
         })
       });
+      if (res.status === 401) { logout(); return; }
       if (!res.ok) throw new Error("Update failed");
       toast.success("Invoice updated successfully");
       fetchHistory();
@@ -136,10 +203,10 @@ const Invoice = () => {
     setProcessingMsg("Analyzing PDF Invoice...");
     setIsProcessing(true);
     setError("");
+    setDetailedError(null);
     setInvoice(null);
     setIsConfirmed(false);
 
-    // Random delay between 4-10 seconds
     const processingDelay = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
 
     try {
@@ -152,7 +219,6 @@ const Invoice = () => {
         body: formData 
       });
 
-      // Wait for both the preview and the artificial delay
       const [res] = await Promise.all([
         previewPromise,
         new Promise(resolve => setTimeout(resolve, processingDelay))
@@ -160,13 +226,15 @@ const Invoice = () => {
 
       if (res.status === 401) { logout(); return; }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Preview failed");
+      
+      if (!res.ok) {
+        throw data; 
+      }
       
       const invData = data.preview || data.invoice;
       if (!invData) throw new Error("Invalid response format");
 
-      // Client-side validation of retailer code
-      if (invData.retailer?.code !== "2500552") {
+      if (String(invData.retailer?.code || "") !== "2500552") {
          const msg = `Upload Rejected: Retailer code is ${invData.retailer?.code}. Expected 2500552.`;
          setError(msg);
          toast.error(msg);
@@ -177,9 +245,10 @@ const Invoice = () => {
       setInvoice(invData);
       toast.success("PDF analyzed! Please review the details.");
     } catch (err) {
-      console.error(err);
-      const msg = err.message || "Something went wrong while processing the PDF";
+      console.error("Preview Error:", err);
+      const msg = err.error || err.message || "Something went wrong while processing the PDF";
       setError(msg);
+      setDetailedError(err);
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -194,6 +263,7 @@ const Invoice = () => {
     setProcessingMsg("Saving to Database & Updating Stock...");
     setIsProcessing(true);
     setError("");
+    setDetailedError(null);
 
     const savingDelay = Math.floor(Math.random() * (10000 - 4000 + 1) + 4000);
 
@@ -214,14 +284,16 @@ const Invoice = () => {
 
       if (res.status === 401) { logout(); return; }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Final upload failed");
+      if (!res.ok) throw data;
       
       toast.success("Invoice saved successfully!");
       setIsConfirmed(true);
       fetchHistory(); 
     } catch (err) {
-      console.error(err);
-      toast.error(err.message || "Failed to save invoice");
+      console.error("Upload Error:", err);
+      const msg = err.error || err.message || "Failed to save invoice";
+      setDetailedError(err);
+      toast.error(msg);
     } finally {
       setLoading(false);
       setIsProcessing(false);
@@ -230,7 +302,9 @@ const Invoice = () => {
 
   const filteredItems = useMemo(() => {
     if (!invoice) return [];
-    return invoice.items.filter((item) => item.brand_name.toLowerCase().includes(search.toLowerCase()));
+    return (invoice.items || []).filter((item) =>
+      (item.brand_name || "").toLowerCase().includes(search.toLowerCase())
+    );
   }, [invoice, search]);
 
   const handleDownload = async (invoiceNumber) => {
@@ -250,7 +324,7 @@ const Invoice = () => {
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (err) {
-      alert("Failed to download PDF: " + err.message);
+      toast.error("Failed to download PDF: " + err.message);
     }
   };
 
@@ -309,6 +383,7 @@ const Invoice = () => {
   return (
     <div className="invoice-page">
       {isProcessing && <ProcessingOverlay message={processingMsg} />}
+      {detailedError && <ErrorModal errorData={detailedError} onClose={() => setDetailedError(null)} />}
       <header className="page-header">
         <div className="header-content">
           <div>
@@ -337,7 +412,7 @@ const Invoice = () => {
         <>
           <div className="upload-section card">
             <div className="drop-zone">
-              <input type="file" accept="application/pdf" onChange={(e) => { setFile(e.target.files[0]); setInvoice(null); setIsConfirmed(false); }} id="file-upload" className="file-input" />
+              <input key={uploadInputKey} type="file" accept="application/pdf" onChange={(e) => { setFile(e.target.files[0]); setInvoice(null); setIsConfirmed(false); }} id="file-upload" className="file-input" />
               <label htmlFor="file-upload" className="file-label">
                 <Upload size={48} className="icon" />
                 <span>{file ? file.name : "Click to select a PDF invoice"}</span>
@@ -351,20 +426,16 @@ const Invoice = () => {
                     </button>
                 )}
                 
-                {invoice && !isConfirmed && (
-                    <>
-                        <button className="btn-secondary" onClick={() => { setInvoice(null); setFile(null); }}>
-                            Cancel
-                        </button>
-                        <button className="btn-primary bg-success" onClick={confirmUpload} disabled={loading}>
-                            {loading ? "Saving..." : "Confirm & Save to Database"}
-                        </button>
-                    </>
-                )}
+
 
                 {isConfirmed && (
-                    <div className="text-success fw-bold flex-align-center">
-                        <CheckCircle size={20} className="mr-2" /> Invoice Saved Successfully
+                    <div className="flex-gap align-center">
+                      <div className="text-success fw-bold flex-align-center">
+                          <CheckCircle size={20} className="mr-2" /> Invoice Saved Successfully
+                      </div>
+                      <button className="btn-primary" onClick={resetUploadForm}>
+                        Add Another Invoice
+                      </button>
                     </div>
                 )}
             </div>
@@ -453,6 +524,17 @@ const Invoice = () => {
                   {showRaw && <pre className="raw-json">{JSON.stringify(invoice, null, 2)}</pre>}
                 </div>
               </div>
+
+              {!isConfirmed && (
+                <div className="action-buttons-bottom">
+                  <button className="btn-secondary" onClick={resetUploadForm}>
+                    Cancel
+                  </button>
+                  <button className="btn-primary bg-success" onClick={confirmUpload} disabled={loading}>
+                    {loading ? "Saving..." : "Confirm & Save to Database"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </>

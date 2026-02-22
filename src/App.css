@@ -1111,6 +1111,17 @@ tr:last-child td {
   outline: none;
 }
 
+/* Remove spinner controls from stock-entry numeric fields */
+.sell-table .form-control.compact[type="number"]::-webkit-outer-spin-button,
+.sell-table .form-control.compact[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.sell-table .form-control.compact[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .form-control.compact.border-danger {
   border-color: var(--danger) !important;
   background-color: #fef2f2;
@@ -1169,6 +1180,7 @@ tr:last-child td {
 /* Utils */
 .text-center { text-align: center; }
 .text-right { text-align: right; }
+.justify-center { justify-content: center; }
 .p-1 { padding: 0.25rem !important; }
 .flex-gap { display: flex; gap: 1rem; align-items: center; }
 .flex-align-center { display: flex; align-items: center; }
@@ -1236,6 +1248,12 @@ tr:last-child td {
   }
 }
 
+@media (max-width: 640px) {
+  .phonepay-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .card-header-accent {
   display: flex;
   align-items: center;
@@ -1296,6 +1314,57 @@ tr:last-child td {
   background: #fdfdfd;
 }
 
+.finance-field-row {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.phonepay-section {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.phonepay-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.phonepay-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+}
+
+.phonepay-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.phonepay-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.phonepay-date,
+.phonepay-amount {
+  height: 38px;
+}
+
+.phonepay-total-row {
+  margin-top: 0.75rem;
+}
+
 .input-with-symbol {
   display: flex;
   align-items: center;
@@ -1326,6 +1395,20 @@ tr:last-child td {
   outline: none;
 }
 
+/* Remove spinner controls from finance number fields */
+.input-with-symbol input[type="number"]::-webkit-outer-spin-button,
+.input-with-symbol input[type="number"]::-webkit-inner-spin-button,
+.exp-amount[type="number"]::-webkit-outer-spin-button,
+.exp-amount[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-with-symbol input[type="number"],
+.exp-amount[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Expenditures */
 .btn-add-small {
   padding: 0.4rem 0.8rem;
@@ -1336,6 +1419,11 @@ tr:last-child td {
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-small:hover {
+  background: #dbeafe;
 }
 
 .exp-item-row {
@@ -1368,6 +1456,11 @@ tr:last-child td {
   border-radius: 4px;
   padding: 0.5rem;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-remove:hover {
+  background: #fecaca;
 }
 
 /* Final Summary Card */
@@ -1479,3 +1572,158 @@ tr:last-child td {
 .w-full { width: 100%; }
 .ml-2 { margin-left: 0.5rem; }
 .fade-in { animation: fadeIn 0.4s ease-out; }
+
+/* Finance Page */
+.finance-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.finance-metric-card {
+  margin-bottom: 0;
+  text-align: left;
+}
+
+.finance-metric-card .label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.finance-metric-card .value {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.finance-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.finance-kv-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.finance-kv-list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.finance-kv-list > div:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.finance-kv-list > div span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.finance-kv-list > div strong {
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .finance-snapshot-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Mobile Stack Actions --- */
+.action-buttons-bottom {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .action-buttons-bottom {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  
+  .action-buttons-bottom button {
+    width: 100%;
+    justify-content: center;
+    padding: 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* Fix for Sell Report Summary Card overlapping on mobile */
+@media (max-width: 1024px) {
+  /* Reset fixed positioning to flow naturally */
+  .final-summary-card {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 2rem 0 0 0 !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border) !important;
+    border-top: 4px solid var(--primary) !important;
+    box-shadow: var(--shadow-sm) !important;
+    padding: 1.5rem !important;
+    flex-direction: column;
+    gap: 1.5rem;
+    z-index: 1;
+  }
+
+  /* Remove bottom margin from layout container */
+  .settlement-layout {
+     margin-bottom: 0 !important;
+  }
+
+  /* Grid layout for summary content */
+  .summary-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      width: 100%;
+      text-align: center;
+  }
+
+  /* Hide decorative elements on mobile */
+  .math-operator,
+  .summary-divider {
+      display: none !important;
+  }
+
+  /* Final balance spans full width */
+  .final-balance-box {
+      grid-column: span 2;
+      margin-top: 0.5rem;
+      padding: 1rem;
+  }
+
+  /* Actions side-by-side */
+  .summary-actions {
+      width: 100%;
+      display: flex;
+      gap: 1rem;
+  }
+
+  .summary-actions button {
+      flex: 1;
+      justify-content: center;
+      padding: 0.8rem;
+  }
+}
+

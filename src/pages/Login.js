@@ -44,7 +44,7 @@ const Login = () => {
           <div className="icon-circle">
             <Wine size={24} color={isAdminMode ? "#ef4444" : "#6366f1"} />
           </div>
-          <h2>{isAdminMode ? "Admin Console" : "Royal wines"}</h2>
+          <h2>{isAdminMode ? "Admin Console" : "Royal Wines"}</h2>
           <p>{isAdminMode ? "System administration access" : "Sign in to your inventory console"}</p>
         </div>
 
@@ -82,7 +82,7 @@ const Login = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="********"
               disabled={loading}
             />
           </div>
@@ -101,3 +101,4 @@ const Login = () => {
 };
 
 export default Login;
+

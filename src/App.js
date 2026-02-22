@@ -8,6 +8,7 @@ import Invoice from "./pages/Invoice";
 import Stock from "./pages/Stock";
 import Admin from "./pages/Admin";
 import SellReport from "./pages/SellReport";
+import Finance from "./pages/Finance";
 import LoadingScreen from "./components/LoadingScreen";
 import { Toaster } from "react-hot-toast";
 import "./App.css";
@@ -45,6 +46,7 @@ function App() {
             <Route path="invoice" element={<Invoice />} />
             <Route path="stock" element={<Stock />} />
             <Route path="sell-report" element={<SellReport />} />
+            <Route path="finance" element={<Finance />} />
             <Route path="admin" element={<Admin />} />
           </Route>
 

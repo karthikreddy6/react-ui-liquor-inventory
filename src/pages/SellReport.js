@@ -34,6 +34,8 @@ const formatDateForDisplay = (dateStr) => {
   return `${day}-${monthNames[parseInt(month) - 1] || month}-${year}`;
 };
 
+const isISODate = (value) => /^\d{4}-\d{2}-\d{2}$/.test((value || "").trim());
+
 // --- Sub-Components (Clean UI) ---
 
 const ErrorModal = ({ errorData, onClose, items = [] }) => {
@@ -43,42 +45,65 @@ const ErrorModal = ({ errorData, onClose, items = [] }) => {
   const targetItem = isDetailed ? items.find(it => it.stock_id === errorData.debug.stock_id) : null;
   
   return (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '600px' }}>
-        <div className="modal-header bg-danger text-white">
-          <h3 className="text-white"><AlertCircle size={20} className="mr-2" /> Validation Error</h3>
-          <button onClick={onClose} className="close-btn text-white"><X size={24}/></button>
+    <div className="modal-overlay" style={{ zIndex: 11000 }}>
+      <div className="modal-content" style={{ maxWidth: '650px', borderRadius: '12px', border: 'none' }}>
+        <div className="modal-header" style={{ background: '#ef4444', color: 'white', padding: '1.25rem 1.5rem' }}>
+          <div className="flex-align-center">
+            <AlertCircle size={24} className="mr-2" />
+            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: 'white' }}>Submission Failed</h3>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24}/></button>
         </div>
-        <div className="modal-body">
-          <div className="alert-danger p-3 rounded mb-3" style={{ background: '#fef2f2', border: '1px solid #fee2e2', color: '#991b1b' }}>
-            <strong>Error:</strong> {errorData.error || errorData.message || "An unexpected error occurred"}
+        
+        <div className="modal-body" style={{ padding: '1.5rem' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <p style={{ color: '#475569', fontSize: '1rem', marginBottom: '0.5rem', fontWeight: '500' }}>The server rejected the report with the following validation error:</p>
+            <div style={{ background: '#fff1f2', border: '1.5px solid #fecaca', padding: '1rem', borderRadius: '8px', color: '#991b1b', fontWeight: '700', fontSize: '1.05rem' }}>
+              {errorData.error || errorData.message || "Unknown Error"}
+            </div>
           </div>
 
           {targetItem && (
-            <div className="brand-alert mb-3 p-3 rounded" style={{ background: '#eff6ff', border: '1px solid #dbeafe' }}>
-               <h4 className="text-primary text-small uppercase mb-1">Affected Brand</h4>
-               <div className="fw-bold" style={{ fontSize: '1.1rem' }}>{targetItem.brand_name}</div>
-               <div className="text-muted text-small">Brand Number: #{targetItem.brand_number}</div>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginBottom: '1.5rem' }}>
+               <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.5rem', fontWeight: '700' }}>Affected Product</h4>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '1.15rem', fontWeight: '800', color: '#1e293b' }}>{targetItem.brand_name}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '600', color: '#4f46e5', background: '#eef2ff', padding: '2px 8px', borderRadius: '4px' }}>#{targetItem.brand_number}</div>
+               </div>
             </div>
           )}
           
           {isDetailed && (
-            <div className="debug-info mt-3">
-              <h4 className="text-small text-muted uppercase mb-2">Technical Details</h4>
-              <div className="card bg-light p-3" style={{ background: '#f8fafc', fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  {Object.entries(errorData.debug).map(([key, value]) => (
-                    <div key={key} className="debug-item border-bottom pb-1">
-                      <span className="text-muted">{key.replace(/_/g, ' ')}:</span> <span className="fw-bold">{value}</span>
-                    </div>
-                  ))}
-                </div>
+            <div>
+              <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: '#64748b', letterSpacing: '0.05em', marginBottom: '0.75rem', fontWeight: '700' }}>Inventory Discrepancy Details</h4>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '12px',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                padding: '1rem',
+                borderRadius: '8px'
+              }}>
+                {[
+                  { label: "Closing Cases", val: errorData.debug.closing_cases, color: '#ef4444' },
+                  { label: "Total Avail (Cs)", val: errorData.debug.total_cases, color: '#10b981' },
+                  { label: "Closing Bottles", val: errorData.debug.closing_bottles, color: '#ef4444' },
+                  { label: "Total Avail (Bt)", val: errorData.debug.total_bottles, color: '#10b981' },
+                  { label: "Pack Size", val: errorData.debug.pack_size_case, color: '#64748b' },
+                  { label: "Opening (Bt)", val: errorData.debug.opening_bottles, color: '#64748b' }
+                ].map((stat, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '4px' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{stat.label}:</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: '700', color: stat.color }}>{stat.val}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
-        <div className="modal-footer">
-          <button className="btn-secondary" onClick={onClose}>Close and Fix Entry</button>
+        <div className="modal-footer" style={{ background: '#f8fafc', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn-secondary" onClick={onClose} style={{ fontWeight: '700' }}>Close & Fix Entry</button>
         </div>
       </div>
     </div>
@@ -150,13 +175,51 @@ const SettlementForm = ({
     currency, 
     setStep, 
     handleFullSubmit, 
-    submitting 
+    submitting,
+    reportDate,
+    previousReportDate
 }) => {
+    const minFinanceEntryDate = normalizeDate(previousReportDate || reportDate || "");
+    const maxCollectionDate = normalizeDate(reportDate || "");
+    const preventWheelNumberChange = (event) => {
+      event.currentTarget.blur();
+    };
+    const phonepayEntries = settlement.phonepay_entries || [];
+    const normalizedPhonepayEntries = phonepayEntries
+      .map((entry) => ({
+        date: (entry?.date || "").trim(),
+        amount: Number(entry?.amount) || 0
+      }))
+      .filter((entry) =>
+        isISODate(entry.date) &&
+        entry.amount > 0 &&
+        (!minFinanceEntryDate || entry.date >= minFinanceEntryDate) &&
+        (!maxCollectionDate || entry.date <= maxCollectionDate)
+      );
+    const phonepayTotal = normalizedPhonepayEntries.reduce((sum, entry) => sum + entry.amount, 0);
+    const fallbackPhonepay = Number(settlement.upi_phonepay) || 0;
+    const effectivePhonepay = normalizedPhonepayEntries.length > 0 ? phonepayTotal : fallbackPhonepay;
+    const cashEntries = settlement.cash_entries || [];
+    const normalizedCashEntries = cashEntries
+      .map((entry) => ({
+        date: (entry?.date || "").trim(),
+        amount: Number(entry?.amount) || 0
+      }))
+      .filter((entry) =>
+        isISODate(entry.date) &&
+        entry.amount > 0 &&
+        (!minFinanceEntryDate || entry.date >= minFinanceEntryDate) &&
+        (!maxCollectionDate || entry.date <= maxCollectionDate)
+      );
+    const cashTotal = normalizedCashEntries.reduce((sum, entry) => sum + entry.amount, 0);
+    const fallbackCash = Number(settlement.cash) || 0;
+    const effectiveCash = normalizedCashEntries.length > 0 ? cashTotal : fallbackCash;
+
     // Math Logic:
     // 1. Target = Sell - Last Balance (Recovering negative balance adds to target)
     const target = totalSellAmount - (Number(settlement.lastBalance) || 0);
     // 2. Collection = UPI + Cash
-    const collection = (Number(settlement.upi_phonepay) || 0) + (Number(settlement.cash) || 0);
+    const collection = effectivePhonepay + effectiveCash;
     // 3. Diff = Target - Collection (Positive = Shortage/Deficit, Negative = Surplus)
     const diff = target - collection;
     // 4. Expenses Total
@@ -186,18 +249,126 @@ const SettlementForm = ({
                                 <span className="value">{currency.format(target)}</span>
                             </div>
                             <hr className="my-4" />
-                            <div className="settlement-row highlight-input-row">
-                                <span className="label">PhonePe (UPI):</span>
-                                <div className="input-with-symbol">
-                                    <span className="symbol">₹</span>
-                                    <input type="number" value={settlement.upi_phonepay} onChange={(e) => setSettlement(p => ({...p, upi_phonepay: e.target.value}))} placeholder="0.00" />
+                            <div className="phonepay-section">
+                                <div className="phonepay-section-head">
+                                    <span className="label">PhonePe (UPI)</span>
+                                    <button
+                                      className="btn-add-small"
+                                      onClick={() => setSettlement((p) => ({
+                                        ...p,
+                                        phonepay_entries: [...(p.phonepay_entries || []), { date: reportDate || "", amount: "" }]
+                                      }))}
+                                    >
+                                      + Add
+                                    </button>
+                                </div>
+                                <div className="phonepay-hint">
+                                    Date must be between <strong>{formatDateForDisplay(minFinanceEntryDate)}</strong> and <strong>{formatDateForDisplay(maxCollectionDate)}</strong>.
+                                </div>
+                                <div className="phonepay-list">
+                                    {(settlement.phonepay_entries || []).map((entry, idx) => (
+                                      <div key={idx} className="phonepay-row">
+                                          <input
+                                            type="date"
+                                            className="exp-name phonepay-date"
+                                            value={entry.date || ""}
+                                            min={minFinanceEntryDate || undefined}
+                                            max={maxCollectionDate || undefined}
+                                            required
+                                            onChange={(e) => {
+                                              const next = [...(settlement.phonepay_entries || [])];
+                                              next[idx] = { ...next[idx], date: e.target.value };
+                                              setSettlement((p) => ({ ...p, phonepay_entries: next }));
+                                            }}
+                                          />
+                                          <input
+                                            type="number"
+                                            className="exp-amount phonepay-amount"
+                                            placeholder="0"
+                                            value={entry.amount || ""}
+                                            onWheel={preventWheelNumberChange}
+                                            onChange={(e) => {
+                                              const next = [...(settlement.phonepay_entries || [])];
+                                              next[idx] = { ...next[idx], amount: e.target.value };
+                                              setSettlement((p) => ({ ...p, phonepay_entries: next }));
+                                            }}
+                                          />
+                                          <button
+                                            className="btn-remove"
+                                            onClick={() => {
+                                              const next = (settlement.phonepay_entries || []).filter((_, i) => i !== idx);
+                                              setSettlement((p) => ({ ...p, phonepay_entries: next }));
+                                            }}
+                                          >
+                                            <X size={14}/>
+                                          </button>
+                                      </div>
+                                    ))}
+                                </div>
+                                <div className="settlement-row total-row phonepay-total-row">
+                                    <span className="label">PhonePe Total:</span>
+                                    <span className="value">{currency.format(effectivePhonepay)}</span>
                                 </div>
                             </div>
-                            <div className="settlement-row highlight-input-row">
-                                <span className="label">Cash Collected:</span>
-                                <div className="input-with-symbol">
-                                    <span className="symbol">₹</span>
-                                    <input type="number" value={settlement.cash} onChange={(e) => setSettlement(p => ({...p, cash: e.target.value}))} placeholder="0.00" />
+                            <div className="phonepay-section">
+                                <div className="phonepay-section-head">
+                                    <span className="label">Cash Collected</span>
+                                    <button
+                                      className="btn-add-small"
+                                      onClick={() => setSettlement((p) => ({
+                                        ...p,
+                                        cash_entries: [...(p.cash_entries || []), { date: reportDate || "", amount: "" }]
+                                      }))}
+                                    >
+                                      + Add
+                                    </button>
+                                </div>
+                                <div className="phonepay-hint">
+                                    Date must be between <strong>{formatDateForDisplay(minFinanceEntryDate)}</strong> and <strong>{formatDateForDisplay(maxCollectionDate)}</strong>.
+                                </div>
+                                <div className="phonepay-list">
+                                    {(settlement.cash_entries || []).map((entry, idx) => (
+                                      <div key={idx} className="phonepay-row">
+                                          <input
+                                            type="date"
+                                            className="exp-name phonepay-date"
+                                            value={entry.date || ""}
+                                            min={minFinanceEntryDate || undefined}
+                                            max={maxCollectionDate || undefined}
+                                            required
+                                            onChange={(e) => {
+                                              const next = [...(settlement.cash_entries || [])];
+                                              next[idx] = { ...next[idx], date: e.target.value };
+                                              setSettlement((p) => ({ ...p, cash_entries: next }));
+                                            }}
+                                          />
+                                          <input
+                                            type="number"
+                                            className="exp-amount phonepay-amount"
+                                            placeholder="0"
+                                            value={entry.amount || ""}
+                                            onWheel={preventWheelNumberChange}
+                                            onChange={(e) => {
+                                              const next = [...(settlement.cash_entries || [])];
+                                              next[idx] = { ...next[idx], amount: e.target.value };
+                                              setSettlement((p) => ({ ...p, cash_entries: next }));
+                                            }}
+                                          />
+                                          <button
+                                            className="btn-remove"
+                                            onClick={() => {
+                                              const next = (settlement.cash_entries || []).filter((_, i) => i !== idx);
+                                              setSettlement((p) => ({ ...p, cash_entries: next }));
+                                            }}
+                                          >
+                                            <X size={14}/>
+                                          </button>
+                                      </div>
+                                    ))}
+                                </div>
+                                <div className="settlement-row total-row phonepay-total-row">
+                                    <span className="label">Cash Total:</span>
+                                    <span className="value">{currency.format(effectiveCash)}</span>
                                 </div>
                             </div>
                             <div className="settlement-row total-row secondary">
@@ -224,7 +395,7 @@ const SettlementForm = ({
                                         <input type="text" className="exp-name" placeholder="Label" value={exp.name} onChange={(e) => {
                                             const news = [...settlement.expenses]; news[idx].name = e.target.value; setSettlement(p=>({...p, expenses:news}));
                                         }} />
-                                        <input type="number" className="exp-amount" placeholder="0" value={exp.amount} onChange={(e) => {
+                                        <input type="number" className="exp-amount" placeholder="0" value={exp.amount} onWheel={preventWheelNumberChange} onChange={(e) => {
                                             const news = [...settlement.expenses]; news[idx].amount = e.target.value; setSettlement(p=>({...p, expenses:news}));
                                         }} />
                                         <button className="btn-remove" onClick={() => {
@@ -275,10 +446,14 @@ const ReportForm = ({
   loading, processedItems, handleInputChange, number, currency, 
   totalSellItems, totalSellAmount, goToStep2, handleFullSubmit,
   submitting, setView, step, setStep, settlement, setSettlement,
-  sortConfig, handleSort, getSortIcon, search, setSearch
+  sortConfig, handleSort, getSortIcon, search, setSearch,
+  nextStepError, disableNextStep, previousReportDate
 }) => {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const preventWheelNumberChange = (event) => {
+    event.currentTarget.blur();
+  };
 
   if (view === "create" && user?.role === "owner") {
        return (
@@ -376,8 +551,8 @@ const ReportForm = ({
                                     <td className="text-center text-muted">{item.opening_cases || 0}/{item.opening_bottles || 0}</td>
                                     <td className="text-center text-muted">{item.invoice_added_cases || 0}/{item.invoice_added_bottles || 0}</td>
                                     <td className="text-center highlight-bg">{item.total_cases}/{item.total_bottles_remainder}</td>
-                                    <td className="p-1"><input type="number" className={`form-control compact ${item.isError ? "border-danger" : ""}`} value={item.closing_cases} onChange={(e) => handleInputChange(item.stock_id, 'closing_cases', e.target.value)} /></td>
-                                    <td className="p-1"><input type="number" className={`form-control compact ${item.isError ? "border-danger" : ""}`} value={item.closing_bottles} onChange={(e) => handleInputChange(item.stock_id, 'closing_bottles', e.target.value)} /></td>
+                                    <td className="p-1"><input type="number" className={`form-control compact ${item.isError ? "border-danger" : ""}`} value={item.closing_cases} onWheel={preventWheelNumberChange} onChange={(e) => handleInputChange(item.stock_id, 'closing_cases', e.target.value)} /></td>
+                                    <td className="p-1"><input type="number" className={`form-control compact ${item.isError ? "border-danger" : ""}`} value={item.closing_bottles} onWheel={preventWheelNumberChange} onChange={(e) => handleInputChange(item.stock_id, 'closing_bottles', e.target.value)} /></td>
                                     <td className="text-center fw-bold text-primary">{item.hasEntry ? number.format(item.sellBottles) : "-"}</td>
                                     <td>{number.format(item.display_rate || 0)}</td>
                                     <td className="fw-bold">{item.hasEntry ? currency.format(item.sellAmount) : "-"}</td>
@@ -398,7 +573,10 @@ const ReportForm = ({
                         </table>
                         </div>                
                         <div className="action-bar justify-end">
-                            <button className="btn-primary" onClick={goToStep2} disabled={loading || processedItems.length === 0 || (view === 'create' && (normalizeDate(reportDate) < normalizeDate(lastInvoiceDate) || normalizeDate(reportDate) > normalizeDate(todayStr)))}>
+                            {nextStepError && (
+                              <div className="text-danger text-small">{nextStepError}</div>
+                            )}
+                            <button className="btn-primary" onClick={goToStep2} disabled={disableNextStep || (view === 'create' && (normalizeDate(reportDate) < normalizeDate(lastInvoiceDate) || normalizeDate(reportDate) > normalizeDate(todayStr)))}>
                                 Next: Settlement <ArrowRight size={18} className="ml-2"/>
                             </button>
                         </div>
@@ -409,6 +587,8 @@ const ReportForm = ({
             <SettlementForm 
                 settlement={settlement} setSettlement={setSettlement} totalSellAmount={totalSellAmount}
                 currency={currency} setStep={setStep} handleFullSubmit={handleFullSubmit} submitting={submitting}
+                reportDate={reportDate}
+                previousReportDate={previousReportDate}
             />
           )}
       </div>
@@ -431,7 +611,14 @@ const SellReport = () => {
   const [reportDate, setReportDate] = useState("");
   const [lastInvoiceDate, setLastInvoiceDate] = useState("");
   const [step, setStep] = useState(1);
-  const [settlement, setSettlement] = useState({ lastBalance: 0, upi_phonepay: "", cash: "", expenses: [{ name: "", amount: "" }] });
+  const [settlement, setSettlement] = useState({
+    lastBalance: 0,
+    upi_phonepay: "",
+    phonepay_entries: [{ date: "", amount: "" }],
+    cash: "",
+    cash_entries: [{ date: "", amount: "" }],
+    expenses: [{ name: "", amount: "" }]
+  });
   const [sortConfig, setSortConfig] = useState([]);
   const [search, setSearch] = useState("");
 
@@ -506,6 +693,19 @@ const SellReport = () => {
     return last.edit_count === 0;
   }, [user, reportHistory]);
 
+  const previousReportDate = useMemo(() => {
+    const current = normalizeDate(reportDate);
+    if (!isISODate(current) || !Array.isArray(reportHistory) || reportHistory.length === 0) return "";
+
+    const previous = reportHistory
+      .map((r) => normalizeDate(r?.report_date))
+      .filter((d) => isISODate(d) && d < current)
+      .sort()
+      .pop();
+
+    return previous || "";
+  }, [reportHistory, reportDate]);
+
   const fetchHistory = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/reports/sell-reports`, { headers: { "Authorization": token } });
@@ -542,20 +742,55 @@ const SellReport = () => {
     setItems(prev => prev.map(item => item.stock_id === id ? { ...item, [field]: value } : item));
   };
 
+  const validateStockEntry = useCallback((item) => {
+    const packSize = Math.max(1, Number(item.pack_size_case) || 1);
+    const hasEntry = item.closing_cases !== "" || item.closing_bottles !== "";
+    if (!hasEntry) return { hasEntry: false, isInvalid: false, message: "" };
+
+    const closingCases = Number(item.closing_cases);
+    const closingBottles = Number(item.closing_bottles);
+
+    if (!Number.isFinite(closingCases) || !Number.isFinite(closingBottles)) {
+      return { hasEntry: true, isInvalid: true, message: "Closing stock must be numeric." };
+    }
+
+    if (!Number.isInteger(closingCases) || !Number.isInteger(closingBottles)) {
+      return { hasEntry: true, isInvalid: true, message: "Closing stock must be whole numbers." };
+    }
+
+    if (closingCases < 0 || closingBottles < 0) {
+      return { hasEntry: true, isInvalid: true, message: "Closing stock cannot be negative." };
+    }
+
+    if (closingBottles >= packSize) {
+      return { hasEntry: true, isInvalid: true, message: `Closing bottles must be less than pack size (${packSize}).` };
+    }
+
+    const availBt = ((item.opening_cases || 0) * packSize + (item.opening_bottles || 0)) +
+      ((item.invoice_added_cases || 0) * packSize + (item.invoice_added_bottles || 0));
+    const closingBt = (closingCases * packSize) + closingBottles;
+
+    if (closingBt > availBt) {
+      return { hasEntry: true, isInvalid: true, message: "Closing stock is greater than present stock." };
+    }
+
+    return { hasEntry: true, isInvalid: false, message: "" };
+  }, []);
+
   const processedItems = useMemo(() => {
     let list = items.map(item => {
       const packSize = item.pack_size_case || 1; 
       const rate = item.mrp || item.rate_per_bottle || (item.rate_per_case ? item.rate_per_case / packSize : 0);
       const availBt = ((item.opening_cases || 0) * packSize + (item.opening_bottles || 0)) + ((item.invoice_added_cases || 0) * packSize + (item.invoice_added_bottles || 0));
       const closingBt = (Number(item.closing_cases) || 0) * packSize + (Number(item.closing_bottles) || 0);
-      const hasEntry = item.closing_cases !== "" || item.closing_bottles !== "";
-      let soldBt = 0, soldAmt = 0, isErr = false;
+      const { hasEntry, isInvalid } = validateStockEntry(item);
+      let soldBt = 0, soldAmt = 0;
       if (hasEntry) {
         soldBt = availBt - closingBt;
-        if (soldBt < 0) { soldBt = 0; isErr = true; }
+        if (soldBt < 0) soldBt = 0;
         soldAmt = soldBt * rate;
       }
-      return { ...item, sellBottles: soldBt, sellAmount: soldAmt, isError: isErr, hasEntry, total_cases: Math.floor(availBt / packSize), total_bottles_remainder: availBt % packSize, display_rate: rate };
+      return { ...item, sellBottles: soldBt, sellAmount: soldAmt, isError: isInvalid, hasEntry, total_cases: Math.floor(availBt / packSize), total_bottles_remainder: availBt % packSize, display_rate: rate };
     });
 
     if (search) {
@@ -605,7 +840,46 @@ const SellReport = () => {
     });
 
     return list;
-  }, [items, sortConfig, search]);
+  }, [items, sortConfig, search, validateStockEntry]);
+
+  const goToStep2 = useCallback(() => {
+    const activeItems = items.filter(item => item.closing_cases !== "" || item.closing_bottles !== "");
+
+    if (activeItems.length === 0) {
+      const msg = "Enter at least one stock closing entry before settlement.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    for (const item of activeItems) {
+      const validation = validateStockEntry(item);
+      if (validation.isInvalid) {
+        const msg = `${item.brand_name || "Item"}: ${validation.message}`;
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+    }
+
+    setError("");
+    setStep(2);
+  }, [items, validateStockEntry]);
+
+  const nextStepError = useMemo(() => {
+    const activeItems = items.filter(item => item.closing_cases !== "" || item.closing_bottles !== "");
+    if (activeItems.length === 0) return "Enter at least one stock entry.";
+
+    for (const item of activeItems) {
+      const validation = validateStockEntry(item);
+      if (validation.isInvalid) return `${item.brand_name || "Item"}: ${validation.message}`;
+    }
+    return "";
+  }, [items, validateStockEntry]);
+
+  const disableNextStep = useMemo(() => {
+    return loading || !!nextStepError;
+  }, [loading, nextStepError]);
 
   const totalSellAmount = processedItems.filter(i => i.hasEntry).reduce((sum, item) => sum + item.sellAmount, 0);
   const totalSellItems = processedItems.filter(i => i.hasEntry).reduce((sum, item) => sum + item.sellBottles, 0);
@@ -621,12 +895,15 @@ const SellReport = () => {
 
     try {
       const activeItems = items.filter(item => item.closing_cases !== "" || item.closing_bottles !== "");
+      const apiReportDate = normalizeDate(reportDate);
+      const minFinanceEntryDate = normalizeDate(previousReportDate || apiReportDate);
+      const maxCollectionDate = apiReportDate;
       
       const submitLogic = async () => {
           const reportRes = await fetch(`${API_BASE}${view === "edit" ? "/seller/sell-report/edit-last" : "/seller/sell-report"}`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": token },
-            body: JSON.stringify({ report_date: formatDateForDisplay(reportDate), items: activeItems.map(item => ({ stock_id: item.stock_id, closing_cases: Number(item.closing_cases) || 0, closing_bottles: Number(item.closing_bottles) || 0 })) })
+            body: JSON.stringify({ report_date: apiReportDate, items: activeItems.map(item => ({ stock_id: item.stock_id, closing_cases: Number(item.closing_cases) || 0, closing_bottles: Number(item.closing_bottles) || 0 })) })
           });
           
           if (!reportRes.ok) {
@@ -634,10 +911,72 @@ const SellReport = () => {
             throw data; // Throw the whole JSON object for better error handling
           }
 
+          const rawPhonepayEntries = (settlement.phonepay_entries || [])
+            .map((entry) => ({
+              date: (entry?.date || "").trim(),
+              amount: Number(entry?.amount) || 0
+            }));
+
+          const phonepayEntries = rawPhonepayEntries.filter((entry) => entry.date || entry.amount > 0);
+          for (const entry of phonepayEntries) {
+            if (!isISODate(entry.date)) {
+              throw new Error("PhonePe entry date must be in YYYY-MM-DD format.");
+            }
+            if (entry.date < minFinanceEntryDate) {
+              throw new Error(`PhonePe entry date must be on or after ${minFinanceEntryDate}.`);
+            }
+            if (maxCollectionDate && entry.date > maxCollectionDate) {
+              throw new Error(`PhonePe entry date cannot be after ${maxCollectionDate}.`);
+            }
+            if (entry.amount <= 0) {
+              throw new Error("PhonePe entry amount must be greater than 0.");
+            }
+          }
+
+          const rawCashEntries = (settlement.cash_entries || [])
+            .map((entry) => ({
+              date: (entry?.date || "").trim(),
+              amount: Number(entry?.amount) || 0
+            }));
+
+          const cashEntries = rawCashEntries.filter((entry) => entry.date || entry.amount > 0);
+          for (const entry of cashEntries) {
+            if (!isISODate(entry.date)) {
+              throw new Error("Cash entry date must be in YYYY-MM-DD format.");
+            }
+            if (entry.date < minFinanceEntryDate) {
+              throw new Error(`Cash entry date must be on or after ${minFinanceEntryDate}.`);
+            }
+            if (maxCollectionDate && entry.date > maxCollectionDate) {
+              throw new Error(`Cash entry date cannot be after ${maxCollectionDate}.`);
+            }
+            if (entry.amount <= 0) {
+              throw new Error("Cash entry amount must be greater than 0.");
+            }
+          }
+          const effectiveCash = cashEntries.length > 0
+            ? cashEntries.reduce((sum, entry) => sum + entry.amount, 0)
+            : (Number(settlement.cash) || 0);
+
+          const financePayload = {
+            report_date: apiReportDate,
+            phonepay_entries: phonepayEntries,
+            cash_entries: cashEntries,
+            expenses: settlement.expenses.map((e) => ({ name: e.name.trim(), amount: Number(e.amount) || 0 }))
+          };
+
+          if (phonepayEntries.length === 0) {
+            financePayload.upi_phonepay = Number(settlement.upi_phonepay) || 0;
+          }
+
+          if (cashEntries.length === 0) {
+            financePayload.cash = effectiveCash;
+          }
+
           const financeRes = await fetch(`${API_BASE}/seller/sell-finance`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": token },
-            body: JSON.stringify({ report_date: formatDateForDisplay(reportDate), upi_phonepay: Number(settlement.upi_phonepay) || 0, cash: Number(settlement.cash) || 0, expenses: settlement.expenses.map(e => ({ name: e.name, amount: Number(e.amount) || 0 })) })
+            body: JSON.stringify(financePayload)
           });
           
           if (!financeRes.ok) {
@@ -724,13 +1063,17 @@ const SellReport = () => {
           view={view} reportDate={reportDate} reportExistsForDate={reportExistsForDate} user={user} setReportDate={setReportDate} 
           lastInvoiceDate={lastInvoiceDate} loading={loading} processedItems={processedItems} handleInputChange={handleInputChange} 
           number={number} currency={currency} totalSellItems={totalSellItems} totalSellAmount={totalSellAmount} 
-          goToStep2={() => setStep(2)} handleFullSubmit={handleFullSubmit} submitting={submitting} 
+          goToStep2={goToStep2} handleFullSubmit={handleFullSubmit} submitting={submitting} 
           setView={setView} step={step} setStep={setStep} settlement={settlement} setSettlement={setSettlement} 
           sortConfig={sortConfig} handleSort={handleSort} getSortIcon={getSortIcon}
           search={search} setSearch={setSearch}
+          nextStepError={nextStepError} disableNextStep={disableNextStep}
+          previousReportDate={previousReportDate}
         />}
     </div>
   );
 };
 
 export default SellReport;
+
+

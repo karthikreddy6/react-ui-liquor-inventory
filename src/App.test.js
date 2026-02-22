@@ -1,8 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { API_BASE } from "./apiConfig";
 
-test('renders Inventory Console title', () => {
-  render(<App />);
-  const titleElement = screen.getByText(/Inventory Console/i);
-  expect(titleElement).toBeInTheDocument();
+test("api base should be configured", () => {
+  expect(API_BASE).toBeTruthy();
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FileText, LogOut, ShoppingCart, Package, Wine } from "lucide-react";
+import { LayoutDashboard, FileText, LogOut, ShoppingCart, Package, Wine, Wallet } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
 
@@ -15,6 +15,7 @@ const Sidebar = ({ closeMobile }) => {
     { name: "Present Stock", path: "/stock", icon: Package },
     { name: "Invoices", path: "/invoice", icon: FileText },
     { name: "Sell Reports", path: "/sell-report", icon: ShoppingCart },
+    { name: "Finance", path: "/finance", icon: Wallet },
   ];
 
   const adminLinks = [
@@ -22,6 +23,7 @@ const Sidebar = ({ closeMobile }) => {
     { name: "Live Stock", path: "/stock", icon: Package },
     { name: "Invoice History", path: "/invoice", icon: FileText },
     { name: "Sell Reports", path: "/sell-report", icon: ShoppingCart },
+    { name: "Finance", path: "/finance", icon: Wallet },
   ];
 
   const links = isAdmin ? adminLinks : staffLinks;

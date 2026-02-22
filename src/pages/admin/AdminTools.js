@@ -1,27 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Trash2, Edit3, Lock, FileText, RefreshCw } from "lucide-react";
 import { API_BASE } from "../../apiConfig";
+import { toast } from "react-hot-toast";
+
+const isISODate = (value) => /^\d{4}-\d{2}-\d{2}$/.test((value || "").trim());
 
 const AdminTools = ({ token, isBasicAuth }) => {
   const [actionLoading, setActionLoading] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [invLoading, setInvLoading] = useState(false);
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     setInvLoading(true);
     try {
       const res = await fetch(`${API_BASE}/reports/invoices`, {
         headers: { "Authorization": token }
       });
+      if (!res.ok) throw new Error("Failed to fetch invoices");
       const data = await res.json();
       setInvoices(Array.isArray(data) ? data : (data.items || []));
     } catch (err) { console.error(err); }
     finally { setInvLoading(false); }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (isBasicAuth) fetchInvoices();
-  }, [isBasicAuth]);
+  }, [isBasicAuth, fetchInvoices]);
 
   const handleDeleteAction = async (endpoint, identifier) => {
     if (!window.confirm(`Are you sure you want to delete ${identifier}?`)) return;
@@ -33,10 +37,10 @@ const AdminTools = ({ token, isBasicAuth }) => {
         headers: { "Authorization": token }
       });
       if (!res.ok) throw new Error("Delete failed");
-      alert("Successfully deleted: " + identifier);
+      toast.success(`Deleted: ${identifier}`);
       if (endpoint.includes("invoices")) fetchInvoices();
     } catch (err) {
-      alert("Delete Error: " + err.message);
+      toast.error(`Delete error: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -52,6 +56,18 @@ const AdminTools = ({ token, isBasicAuth }) => {
     const rate = window.prompt("Enter new Rate per Case:");
 
     if (cases === null || bottles === null || rate === null) return;
+    const casesValue = Number(cases);
+    const bottlesValue = Number(bottles);
+    const rateValue = Number(rate);
+
+    if (![casesValue, bottlesValue, rateValue].every(Number.isFinite)) {
+      toast.error("Enter valid numeric values.");
+      return;
+    }
+    if (casesValue < 0 || bottlesValue < 0 || rateValue < 0) {
+      toast.error("Values must be non-negative.");
+      return;
+    }
 
     setActionLoading(true);
     try {
@@ -62,15 +78,15 @@ const AdminTools = ({ token, isBasicAuth }) => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          total_cases: Number(cases),
-          total_bottles: Number(bottles),
-          rate_per_case: Number(rate)
+          total_cases: casesValue,
+          total_bottles: bottlesValue,
+          rate_per_case: rateValue
         })
       });
       if (!res.ok) throw new Error("Update failed");
-      alert("Stock updated successfully!");
+      toast.success("Stock updated successfully.");
     } catch (err) {
-      alert("Update Error: " + err.message);
+      toast.error(`Update error: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
@@ -95,11 +111,21 @@ const AdminTools = ({ token, isBasicAuth }) => {
                         <div className="flex-gap">
                             <button className="btn-secondary btn-sm flex-1" disabled={!isBasicAuth} onClick={() => {
                                 const date = window.prompt("Report Date:");
-                                if (date) handleDeleteAction(`/admin/reports/sell-reports/${date}`, date);
+                                if (!date) return;
+                                if (!isISODate(date)) {
+                                  toast.error("Enter date in YYYY-MM-DD format.");
+                                  return;
+                                }
+                                handleDeleteAction(`/admin/reports/sell-reports/${date}`, date);
                             }}>Report</button>
                             <button className="btn-secondary btn-sm flex-1" disabled={!isBasicAuth} onClick={() => {
                                 const date = window.prompt("Finance Date:");
-                                if (date) handleDeleteAction(`/admin/sell-finance/${date}`, date);
+                                if (!date) return;
+                                if (!isISODate(date)) {
+                                  toast.error("Enter date in YYYY-MM-DD format.");
+                                  return;
+                                }
+                                handleDeleteAction(`/admin/sell-finance/${date}`, date);
                             }}>Finance</button>
                         </div>
                     </div>

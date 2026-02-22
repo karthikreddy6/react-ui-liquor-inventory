@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { List, User, AlertCircle, Lock } from "lucide-react";
+import { List, User, AlertCircle } from "lucide-react";
 import { API_BASE } from "../../apiConfig";
 
 const AdminLogs = ({ token, isBasicAuth }) => {
