@@ -183,10 +183,27 @@ const Invoice = () => {
   }, [token]);
 
   useEffect(() => {
-    if (token && view === "history") {
+    if (token && view === "history" && (user?.role === "admin" || user?.role === "owner" || user?.role === "supervisor")) {
       fetchHistory();
     }
-  }, [token, view, fetchHistory]);
+  }, [token, view, user, fetchHistory]);
+
+  const filteredItems = useMemo(() => {
+    if (!invoice) return [];
+    return (invoice.items || []).filter((item) =>
+      (item.brand_name || "").toLowerCase().includes(search.toLowerCase())
+    );
+  }, [invoice, search]);
+
+  if (user?.role === "seller") {
+    return (
+      <div className="empty-state p-5">
+        <AlertTriangle size={48} className="text-danger mb-3" />
+        <h3>Access Denied</h3>
+        <p>You do not have privileges to view invoice management.</p>
+      </div>
+    );
+  }
 
   const previewFile = async () => {
     if (!file) {
@@ -299,13 +316,6 @@ const Invoice = () => {
       setIsProcessing(false);
     }
   };
-
-  const filteredItems = useMemo(() => {
-    if (!invoice) return [];
-    return (invoice.items || []).filter((item) =>
-      (item.brand_name || "").toLowerCase().includes(search.toLowerCase())
-    );
-  }, [invoice, search]);
 
   const handleDownload = async (invoiceNumber) => {
     try {

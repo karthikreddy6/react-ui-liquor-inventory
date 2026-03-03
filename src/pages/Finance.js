@@ -39,7 +39,7 @@ const formatDateTime = (value) => {
 };
 
 const Finance = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeSection, setActiveSection] = useState("snapshot");
@@ -87,8 +87,10 @@ const Finance = () => {
   }, [token, logout]);
 
   useEffect(() => {
-    if (token) fetchOverview();
-  }, [token, fetchOverview]);
+    if (token && (user?.role === "admin" || user?.role === "owner" || user?.role === "supervisor")) {
+      fetchOverview();
+    }
+  }, [token, user, fetchOverview]);
 
   const metrics = useMemo(() => {
     const latestBal = overview.finance[0]?.final_balance || 0;
@@ -129,6 +131,16 @@ const Finance = () => {
       return display.includes(query) || raw.includes(query);
     });
   }, [overview.sell_reports, reportDateFilter]);
+
+  if (user?.role === "seller") {
+    return (
+      <div className="empty-state p-5">
+        <AlertCircle size={48} className="text-danger mb-3" />
+        <h3>Access Denied</h3>
+        <p>You do not have privileges to view financial settlements.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="finance-page">

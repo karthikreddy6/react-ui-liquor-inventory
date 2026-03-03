@@ -923,10 +923,10 @@ const SellReport = () => {
               throw new Error("PhonePe entry date must be in YYYY-MM-DD format.");
             }
             if (entry.date < minFinanceEntryDate) {
-              throw new Error(`PhonePe entry date must be on or after ${minFinanceEntryDate}.`);
+              throw new Error(`PhonePe entry date must be on or after ${formatDateForDisplay(minFinanceEntryDate)}.`);
             }
             if (maxCollectionDate && entry.date > maxCollectionDate) {
-              throw new Error(`PhonePe entry date cannot be after ${maxCollectionDate}.`);
+              throw new Error(`PhonePe entry date cannot be after ${formatDateForDisplay(maxCollectionDate)}.`);
             }
             if (entry.amount <= 0) {
               throw new Error("PhonePe entry amount must be greater than 0.");
@@ -945,10 +945,10 @@ const SellReport = () => {
               throw new Error("Cash entry date must be in YYYY-MM-DD format.");
             }
             if (entry.date < minFinanceEntryDate) {
-              throw new Error(`Cash entry date must be on or after ${minFinanceEntryDate}.`);
+              throw new Error(`Cash entry date must be on or after ${formatDateForDisplay(minFinanceEntryDate)}.`);
             }
             if (maxCollectionDate && entry.date > maxCollectionDate) {
-              throw new Error(`Cash entry date cannot be after ${maxCollectionDate}.`);
+              throw new Error(`Cash entry date cannot be after ${formatDateForDisplay(maxCollectionDate)}.`);
             }
             if (entry.amount <= 0) {
               throw new Error("Cash entry amount must be greater than 0.");

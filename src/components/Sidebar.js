@@ -13,9 +13,9 @@ const Sidebar = ({ closeMobile }) => {
   const staffLinks = [
     { name: "Dashboard", path: "/", icon: LayoutDashboard },
     { name: "Present Stock", path: "/stock", icon: Package },
-    { name: "Invoices", path: "/invoice", icon: FileText },
+    { name: "Invoices", path: "/invoice", icon: FileText, roles: ["supervisor", "owner"] },
     { name: "Sell Reports", path: "/sell-report", icon: ShoppingCart },
-    { name: "Finance", path: "/finance", icon: Wallet },
+    { name: "Finance", path: "/finance", icon: Wallet, roles: ["supervisor", "owner"] },
   ];
 
   const adminLinks = [
@@ -26,7 +26,9 @@ const Sidebar = ({ closeMobile }) => {
     { name: "Finance", path: "/finance", icon: Wallet },
   ];
 
-  const links = isAdmin ? adminLinks : staffLinks;
+  const links = isAdmin 
+    ? adminLinks 
+    : staffLinks.filter(link => !link.roles || link.roles.includes(user?.role));
 
   const containerVariants = {
     hidden: { opacity: 0 },
