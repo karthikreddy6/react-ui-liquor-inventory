@@ -22,7 +22,8 @@ const PrivateRoute = ({ children }) => {
     return <LoadingScreen />;
   }
 
-  if (!user) {
+  // Strict check: user must exist and have at least a role or username
+  if (!user || (!user.role && !user.username)) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -50,6 +51,7 @@ function App() {
             <Route path="admin" element={<Admin />} />
           </Route>
 
+          {/* Catch-all: always redirect to root which is protected */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
@@ -58,7 +60,11 @@ function App() {
 }
 
 const RoleBasedHome = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/login" replace />;
+  
   if (user?.role === "admin") return <Navigate to="/admin" replace />;
   return <Dashboard />;
 };

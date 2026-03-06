@@ -177,9 +177,10 @@ const SettlementForm = ({
     handleFullSubmit, 
     submitting,
     reportDate,
-    previousReportDate
+    previousReportDate,
+    lastInvoiceDate
 }) => {
-    const minFinanceEntryDate = normalizeDate(previousReportDate || reportDate || "");
+    const minFinanceEntryDate = normalizeDate(previousReportDate || lastInvoiceDate || reportDate || "");
     const maxCollectionDate = normalizeDate(reportDate || "");
     const preventWheelNumberChange = (event) => {
       event.currentTarget.blur();
@@ -218,8 +219,10 @@ const SettlementForm = ({
     // Math Logic:
     // 1. Target = Sell - Last Balance (Recovering negative balance adds to target)
     const target = totalSellAmount - (Number(settlement.lastBalance) || 0);
-    // 2. Collection = UPI + Cash
-    const collection = effectivePhonepay + effectiveCash;
+    // 2. Collection = UPI + Cash + Outside Income
+    const outsideIncomeTotal = (settlement.outside_income || []).reduce((sum, inc) => sum + (Number(inc.amount) || 0), 0);
+    const collection = effectivePhonepay + effectiveCash + outsideIncomeTotal;
+    
     // 3. Diff = Target - Collection (Positive = Shortage/Deficit, Negative = Surplus)
     const diff = target - collection;
     // 4. Expenses Total
@@ -371,8 +374,71 @@ const SettlementForm = ({
                                     <span className="value">{currency.format(effectiveCash)}</span>
                                 </div>
                             </div>
+                            <div className="phonepay-section">
+                                <div className="phonepay-section-head">
+                                    <span className="label text-success">Outside Income</span>
+                                    <button
+                                      className="btn-add-small"
+                                      style={{ background: '#10b981' }}
+                                      onClick={() => setSettlement((p) => ({
+                                        ...p,
+                                        outside_income: [...(p.outside_income || []), { name: "", amount: "" }]
+                                      }))}
+                                    >
+                                      + Add
+                                    </button>
+                                </div>
+                                <div className="phonepay-list">
+                                    {(settlement.outside_income || []).map((inc, idx) => (
+                                      <div key={idx} className="phonepay-row">
+                                          <input
+                                            type="text"
+                                            className="exp-name"
+                                            placeholder="Label (e.g. Extra Credit)"
+                                            value={inc.name || ""}
+                                            onChange={(e) => {
+                                              const next = [...(settlement.outside_income || [])];
+                                              next[idx] = { ...next[idx], name: e.target.value };
+                                              setSettlement((p) => ({ ...p, outside_income: next }));
+                                            }}
+                                          />
+                                          <input
+                                            type="number"
+                                            className="exp-amount phonepay-amount"
+                                            placeholder="0"
+                                            value={inc.amount || ""}
+                                            onWheel={preventWheelNumberChange}
+                                            onChange={(e) => {
+                                              const next = [...(settlement.outside_income || [])];
+                                              next[idx] = { ...next[idx], amount: e.target.value };
+                                              setSettlement((p) => ({ ...p, outside_income: next }));
+                                            }}
+                                          />
+                                          <button
+                                            className="btn-remove"
+                                            onClick={() => {
+                                              const next = (settlement.outside_income || []).filter((_, i) => i !== idx);
+                                              setSettlement((p) => ({ ...p, outside_income: next }));
+                                            }}
+                                          >
+                                            <X size={14}/>
+                                          </button>
+                                      </div>
+                                    ))}
+                                </div>
+                                <div className="settlement-row total-row phonepay-total-row">
+                                    <span className="label">Income Total:</span>
+                                    <span className="value text-success">{currency.format(outsideIncomeTotal)}</span>
+                                </div>
+                            </div>
+
+                            <hr className="my-4" />
+                            <div className="settlement-row total-row">
+                                <span className="label">Total Collection (UPI+Cash+Inc):</span>
+                                <span className="value text-success fw-bold">{currency.format(collection)}</span>
+                            </div>
                             <div className="settlement-row total-row secondary">
-                                <span className="label">After Settlement:</span>
+                                <span className="label">After Settlement (Shortage):</span>
                                 <span className={`value ${diff > 0 ? 'text-danger' : 'text-success'}`}>{currency.format(diff)}</span>
                             </div>
                         </div>
@@ -380,7 +446,7 @@ const SettlementForm = ({
                 </div>
 
                 <div className="settlement-side">
-                    <div className="card settlement-card">
+                    <div className="card settlement-card mb-4">
                         <div className="card-header-accent">
                             <History size={18} />
                             <div className="flex-between w-full">
@@ -416,12 +482,22 @@ const SettlementForm = ({
             <div className="card final-summary-card">
                 <div className="summary-content">
                     <div className="summary-stat">
-                        <span className="label">After Settlement</span>
+                        <span className="label">Target</span>
+                        <span className="value">{currency.format(target)}</span>
+                    </div>
+                    <div className="math-operator">-</div>
+                    <div className="summary-stat">
+                        <span className="label">Collection</span>
+                        <span className="value text-success">{currency.format(collection)}</span>
+                    </div>
+                    <div className="math-operator">=</div>
+                    <div className="summary-stat">
+                        <span className="label">Shortage</span>
                         <span className={`value ${diff > 0 ? 'text-danger' : 'text-success'}`}>{currency.format(diff)}</span>
                     </div>
                     <div className="math-operator">-</div>
                     <div className="summary-stat">
-                        <span className="label">Total Expenses</span>
+                        <span className="label">Expenses</span>
                         <span className="value">{currency.format(expensesTotal)}</span>
                     </div>
                     <div className="summary-divider"></div>
@@ -589,6 +665,7 @@ const ReportForm = ({
                 currency={currency} setStep={setStep} handleFullSubmit={handleFullSubmit} submitting={submitting}
                 reportDate={reportDate}
                 previousReportDate={previousReportDate}
+                lastInvoiceDate={lastInvoiceDate}
             />
           )}
       </div>
@@ -617,7 +694,8 @@ const SellReport = () => {
     phonepay_entries: [{ date: "", amount: "" }],
     cash: "",
     cash_entries: [{ date: "", amount: "" }],
-    expenses: [{ name: "", amount: "" }]
+    expenses: [{ name: "", amount: "" }],
+    outside_income: [{ name: "", amount: "" }]
   });
   const [sortConfig, setSortConfig] = useState([]);
   const [search, setSearch] = useState("");
@@ -896,7 +974,7 @@ const SellReport = () => {
     try {
       const activeItems = items.filter(item => item.closing_cases !== "" || item.closing_bottles !== "");
       const apiReportDate = normalizeDate(reportDate);
-      const minFinanceEntryDate = normalizeDate(previousReportDate || apiReportDate);
+      const minFinanceEntryDate = normalizeDate(previousReportDate || lastInvoiceDate || apiReportDate);
       const maxCollectionDate = apiReportDate;
       
       const submitLogic = async () => {
@@ -962,7 +1040,8 @@ const SellReport = () => {
             report_date: apiReportDate,
             phonepay_entries: phonepayEntries,
             cash_entries: cashEntries,
-            expenses: settlement.expenses.map((e) => ({ name: e.name.trim(), amount: Number(e.amount) || 0 }))
+            expenses: settlement.expenses.map((e) => ({ name: e.name.trim(), amount: Number(e.amount) || 0 })),
+            outside_income: settlement.outside_income.map((i) => ({ name: i.name.trim(), amount: Number(i.amount) || 0 }))
           };
 
           if (phonepayEntries.length === 0) {
@@ -993,6 +1072,18 @@ const SellReport = () => {
       ]);
 
       toast.success("Sell Report submitted successfully!"); 
+      // Reset all finance and stock entry fields
+      setSettlement({
+        lastBalance: 0,
+        upi_phonepay: "",
+        phonepay_entries: [{ date: "", amount: "" }],
+        cash: "",
+        cash_entries: [{ date: "", amount: "" }],
+        expenses: [{ name: "", amount: "" }],
+        outside_income: [{ name: "", amount: "" }]
+      });
+      setItems(prev => prev.map(item => ({ ...item, closing_cases: "", closing_bottles: "" })));
+      
       setView("history"); setStep(1); fetchHistory();
     } catch (err) { 
         console.error("Submission Error:", err);

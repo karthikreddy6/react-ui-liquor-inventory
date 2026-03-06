@@ -268,6 +268,7 @@ const Finance = () => {
                 <th>UPI/PhPay</th>
                 <th>Cash</th>
                 <th>Expenses</th>
+                <th>Income</th>
                 <th>Final Balance</th>
                 <th>Updated By</th>
               </tr>
@@ -282,6 +283,7 @@ const Finance = () => {
                       <td>{currency.format(row.upi_phonepay || 0)}</td>
                       <td>{currency.format(row.cash || 0)}</td>
                       <td>{currency.format(row.total_expenses || 0)}</td>
+                      <td className="text-success">{currency.format(row.total_outside_income || 0)}</td>
                       <td className={Number(row.final_balance) < 0 ? "text-danger fw-bold" : "text-success fw-bold"}>
                         {currency.format(row.final_balance || 0)}
                       </td>
@@ -290,7 +292,7 @@ const Finance = () => {
                   );
                 })
               ) : (
-                <tr><td colSpan="7" className="text-center">No finance records found for this filter.</td></tr>
+                <tr><td colSpan="8" className="text-center">No finance records found for this filter.</td></tr>
               )}
             </tbody>
           </table>
