@@ -10,15 +10,50 @@ const StatCard = ({ title, value, icon: Icon, color, subtext, index }) => (
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.1 }}
-    whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+    whileHover={{ y: -5, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+    style={{ 
+      position: 'relative', 
+      overflow: 'hidden',
+      padding: '1.75rem',
+      borderRadius: '16px',
+      background: 'white',
+      border: '1px solid #f1f5f9',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }}
   >
+    {/* Decorative background tint */}
+    <div style={{ 
+      position: 'absolute', 
+      top: '-20px', 
+      right: '-20px', 
+      width: '100px', 
+      height: '100px', 
+      borderRadius: '50%', 
+      background: color, 
+      opacity: 0.05 
+    }} />
+
     <div className="stat-info">
-      <span className="stat-title">{title}</span>
-      <h3 className="stat-value">{value}</h3>
-      {subtext && <p className="text-small text-muted mt-1">{subtext}</p>}
+      <span className="stat-title" style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600', letterSpacing: '0.025em', textTransform: 'uppercase' }}>{title}</span>
+      <h3 className="stat-value" style={{ fontSize: '1.85rem', fontWeight: '800', margin: '0.5rem 0', color: '#1e293b' }}>{value}</h3>
+      {subtext && <p className="text-small text-muted mt-1" style={{ fontSize: '0.8rem', fontWeight: '500' }}>{subtext}</p>}
     </div>
-    <div className="stat-icon" style={{ backgroundColor: `${color}20`, color: color }}>
-      <Icon size={24} />
+    <div 
+      className="stat-icon" 
+      style={{ 
+        backgroundColor: `${color}15`, 
+        color: color,
+        padding: '1rem',
+        borderRadius: '14px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1
+      }}
+    >
+      <Icon size={28} strokeWidth={2.5} />
     </div>
   </motion.div>
 );
@@ -52,7 +87,7 @@ const Dashboard = () => {
   const number = useMemo(() => new Intl.NumberFormat("en-IN"), []);
 
   const stats = [
-    { title: "Stock MRP Value", value: currency.format(summary.total_present_stock_mrp_value || 0), icon: DollarSign, color: "#10b981" },
+    { title: "Total Stock MRP", value: currency.format(summary.total_present_stock_mrp_value || 0), icon: DollarSign, color: "#10b981" },
     { title: "Available Stock (cases)", value: number.format(summary.total_present_stock || 0), icon: Package, color: "#3b82f6", subtext: "Across all brands" },
     { title: "Last Sell Report", value: currency.format(summary.last_sell_report_value || 0), icon: TrendingUp, color: "#f59e0b", subtext: `Date: ${summary.last_sell_report_date || 'N/A'}` },
     { title: "Last Invoice Value", value: currency.format(summary.last_invoice_value || 0), icon: FileText, color: "#6366f1", subtext: `Date: ${summary.last_invoice_date || 'N/A'}` },

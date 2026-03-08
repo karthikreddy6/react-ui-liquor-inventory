@@ -523,7 +523,8 @@ const ReportForm = ({
   totalSellItems, totalSellAmount, goToStep2, handleFullSubmit,
   submitting, setView, step, setStep, settlement, setSettlement,
   sortConfig, handleSort, getSortIcon, search, setSearch,
-  nextStepError, disableNextStep, previousReportDate
+  nextStepError, disableNextStep, previousReportDate,
+  sortMode, setSortMode
 }) => {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -559,6 +560,25 @@ const ReportForm = ({
                             <div className="flex-gap align-center">
                                 <input type="date" className="form-control" value={reportDate} onChange={(e) => setReportDate(e.target.value)} />
                                 <span className="text-small text-muted">Last Invoice: <strong>{formatDateForDisplay(lastInvoiceDate)}</strong></span>
+                            </div>
+                        </div>
+                        <div className="flex-gap align-center" style={{ marginLeft: '1rem' }}>
+                            <label className="text-small fw-bold mr-2">Sort Order:</label>
+                            <div className="btn-group" style={{ display: 'flex', gap: '4px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
+                                <button 
+                                  className={`btn-toggle-small ${sortMode === 'default' ? 'active' : ''}`} 
+                                  onClick={() => setSortMode('default')}
+                                  style={{ padding: '4px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: sortMode === 'default' ? 'white' : 'transparent', boxShadow: sortMode === 'default' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: sortMode === 'default' ? '700' : '500' }}
+                                >
+                                  Default
+                                </button>
+                                <button 
+                                  className={`btn-toggle-small ${sortMode === 'custom' ? 'active' : ''}`} 
+                                  onClick={() => setSortMode('custom')}
+                                  style={{ padding: '4px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: sortMode === 'custom' ? 'white' : 'transparent', boxShadow: sortMode === 'custom' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: sortMode === 'custom' ? '700' : '500' }}
+                                >
+                                  Custom
+                                </button>
                             </div>
                         </div>
                         {reportDate && lastInvoiceDate && (normalizeDate(reportDate) < normalizeDate(lastInvoiceDate) || normalizeDate(reportDate) > normalizeDate(todayStr)) && (
@@ -619,7 +639,7 @@ const ReportForm = ({
                                 <tr key={item.stock_id}>
                                     <td>{i + 1}</td>
                                     <td>
-                                        <div className="fw-bold">{item.brand_name}</div>
+                                        <div className="fw-bold">{item.display_brand_name || item.brand_name}</div>
                                         <div className="text-small text-muted">{item.brand_number}</div>
                                     </td>
                                     <td><span className="badge-type">{item.product_type || "N/A"}</span></td>
@@ -688,6 +708,8 @@ const SellReport = () => {
   const [reportDate, setReportDate] = useState("");
   const [lastInvoiceDate, setLastInvoiceDate] = useState("");
   const [step, setStep] = useState(1);
+  const [sortMode, setSortMode] = useState("default");
+  const [customBrandOrder, setCustomBrandOrder] = useState([]);
   const [settlement, setSettlement] = useState({
     lastBalance: 0,
     upi_phonepay: "",
@@ -809,6 +831,9 @@ const SellReport = () => {
       if (data.last_balance_amount !== undefined) {
         setSettlement(prev => ({ ...prev, lastBalance: data.last_balance_amount }));
       }
+      if (data.custom_brand_order) {
+        setCustomBrandOrder(data.custom_brand_order);
+      }
       setItems((data.items || []).map(item => ({ ...item, closing_cases: item.closing_cases ?? "", closing_bottles: item.closing_bottles ?? "" })));
     } catch (err) { setError("Failed to fetch sell report data"); }
     finally { setLoading(false); }
@@ -880,6 +905,23 @@ const SellReport = () => {
     }
 
     list.sort((a, b) => {
+      // Primary Custom Sort (Handled client-side for zero refresh)
+      if (sortMode === "custom" && customBrandOrder.length > 0) {
+        const indexA = customBrandOrder.indexOf(a.brand_number);
+        const indexB = customBrandOrder.indexOf(b.brand_number);
+        
+        // Both in custom list: sort by custom index
+        if (indexA !== -1 && indexB !== -1) {
+            if (indexA !== indexB) return indexA - indexB;
+            // Same brand: sort by quantity ascending (90, 180, 375...)
+            return (Number(a.pack_size_quantity_ml) || 0) - (Number(b.pack_size_quantity_ml) || 0);
+        }
+        // Only one in custom list: custom list items come first
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+      }
+
+      // Default/Manual Sort
       const compare = (v1, v2, direction = 'asc') => {
         if (v1 < v2) return direction === 'asc' ? -1 : 1;
         if (v1 > v2) return direction === 'asc' ? 1 : -1;
@@ -892,7 +934,7 @@ const SellReport = () => {
       const defaults = [
         { key: 'product_type', dir: 'desc' },
         { key: 'brand_name', dir: 'asc' },
-        { key: 'pack_size_quantity_ml', dir: 'desc' }
+        { key: 'pack_size_quantity_ml', dir: 'asc' }
       ];
 
       defaults.forEach(def => {
@@ -918,7 +960,7 @@ const SellReport = () => {
     });
 
     return list;
-  }, [items, sortConfig, search, validateStockEntry]);
+  }, [items, sortConfig, search, validateStockEntry, sortMode, customBrandOrder]);
 
   const goToStep2 = useCallback(() => {
     const activeItems = items.filter(item => item.closing_cases !== "" || item.closing_bottles !== "");
@@ -1160,11 +1202,10 @@ const SellReport = () => {
           search={search} setSearch={setSearch}
           nextStepError={nextStepError} disableNextStep={disableNextStep}
           previousReportDate={previousReportDate}
+          sortMode={sortMode} setSortMode={setSortMode}
         />}
     </div>
   );
 };
 
 export default SellReport;
-
-

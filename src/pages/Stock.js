@@ -236,7 +236,7 @@ const Stock = () => {
           </div>
           <div className="card summary-item">
             <span className="label">Total Valuation</span>
-            <span className="value highlight">{currency.format(summary.total_price_all_items || 0)}</span>
+            <span className="value">{currency.format(summary.total_price_all_items || 0)}</span>
           </div>
           {/* <div className="card summary-item">
             <span className="label">Data Source</span>
