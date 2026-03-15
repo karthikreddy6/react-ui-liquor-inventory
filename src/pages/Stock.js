@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, RefreshCw, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Edit3 } from "lucide-react";
+import { Search, RefreshCw, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Edit3, Download } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
 import { toast } from "react-hot-toast";
@@ -9,6 +9,7 @@ const Stock = () => {
   const [stock, setStock] = useState([]); 
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [isShortView, setIsShortView] = useState(() => {
@@ -17,6 +18,39 @@ const Stock = () => {
   
   const isAdmin = user?.role === "admin";
   const [sortConfig, setSortConfig] = useState([]);
+
+  const handleDownloadPdf = async () => {
+    if (downloadingPdf) return;
+    setDownloadingPdf(true);
+    try {
+      const res = await fetch(`${API_BASE}/stock/pdf`, {
+        method: "GET",
+        headers: {
+          Authorization: token,
+        },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to download stock PDF");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `present_stock_${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Stock PDF downloaded successfully.");
+    } catch (err) {
+      toast.error(err.message || "Unable to download PDF.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const handleQuickEdit = async (item) => {
     const cases = window.prompt(`Edit ${item.brand_name}\nNew Total Cases:`, item.total_cases);
@@ -220,9 +254,15 @@ const Stock = () => {
                 <h1>Present Stock</h1>
                 <p className="text-muted">Real-time view of your warehouse stock.</p>
             </div>
-            <button className="btn-secondary" onClick={fetchStock} disabled={loading}>
-                <RefreshCw size={16} className={loading ? "spin" : ""} /> Refresh Stock
-            </button>
+            <div className="flex-align-center gap-2">
+                <button className="btn-secondary" onClick={handleDownloadPdf} disabled={downloadingPdf}>
+                    <Download size={16} className={downloadingPdf ? "animate-pulse" : ""} /> 
+                    {downloadingPdf ? "Downloading..." : "Download PDF"}
+                </button>
+                <button className="btn-secondary" onClick={fetchStock} disabled={loading}>
+                    <RefreshCw size={16} className={loading ? "spin" : ""} /> Refresh Stock
+                </button>
+            </div>
         </div>
       </header>
 
