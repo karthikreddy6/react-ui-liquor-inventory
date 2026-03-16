@@ -1834,3 +1834,76 @@ tr:last-child td {
 .brand-option-card:hover .plus-icon {
   opacity: 1;
 }
+
+/* --- Print Styles --- */
+@media print {
+  .sidebar, .page-header, .sidebar-overlay, .mobile-header, .btn-group, .table-controls, .action-bar, .step-indicator, .form-header-card, .btn-secondary, .btn-primary, .btn-submit-final, .final-summary-card, .nav-menu, .user-info, .sidebar-header {
+    display: none !important;
+  }
+
+  body, .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    width: 100% !important;
+  }
+
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .table-card {
+    width: 100% !important;
+  }
+
+  .sell-table {
+    font-size: 8pt !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  .sell-table th, .sell-table td {
+    border: 1px solid #000 !important;
+    padding: 4pt !important;
+  }
+
+  .sell-table thead th {
+    background-color: #f1f5f9 !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .sell-table .compact {
+    border: none !important;
+    padding: 0 !important;
+    text-align: center !important;
+  }
+
+  .sell-table input {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+    font-size: 8pt !important;
+    color: black !important;
+    -webkit-appearance: none;
+    box-shadow: none !important;
+  }
+
+  /* Show input value as text during print if needed */
+  /* For now, the user fills it, so it might be better to just show the value if we can */
+  /* But since they are input fields, window.print() usually shows the value. */
+  
+  .highlight-bg {
+    background-color: #eff6ff !important;
+    -webkit-print-color-adjust: exact;
+  }
+
+  @page {
+    margin: 0.5cm;
+  }
+}

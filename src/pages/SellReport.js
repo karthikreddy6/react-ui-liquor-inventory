@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Save, AlertCircle, ShoppingCart, History, Edit, CheckCircle, X, ArrowRight, ArrowLeft, Download, ChevronsUpDown, ChevronUp, ChevronDown, Search, RefreshCw, Trash2 } from "lucide-react";
+import { Save, AlertCircle, ShoppingCart, History, Edit, CheckCircle, X, ArrowRight, ArrowLeft, Download, ChevronsUpDown, ChevronUp, ChevronDown, Search, RefreshCw, Trash2, Printer } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
 import ProcessingOverlay from "../components/ProcessingOverlay";
@@ -669,6 +669,9 @@ const ReportForm = ({
                         </table>
                         </div>                
                         <div className="action-bar justify-end">
+                            <button className="btn-secondary mr-2" onClick={() => window.print()}>
+                                <Printer size={18} className="mr-2"/> Print Table
+                            </button>
                             {nextStepError && (
                               <div className="text-danger text-small">{nextStepError}</div>
                             )}
