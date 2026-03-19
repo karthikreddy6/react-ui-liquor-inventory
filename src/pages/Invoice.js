@@ -348,6 +348,20 @@ const Invoice = () => {
     }
   };
 
+  const handleViewPdf = async (invoiceNumber) => {
+    try {
+      const res = await fetch(`${API_BASE}/reports/invoices/${invoiceNumber}/pdf`, {
+        headers: { "Authorization": token }
+      });
+      if (!res.ok) throw new Error("Failed to load PDF");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (err) {
+      toast.error("Failed to view PDF: " + err.message);
+    }
+  };
+
   const HistoryView = () => (
     <div className="card table-card">
       <div className="table-responsive">
@@ -374,6 +388,9 @@ const Invoice = () => {
                   <td>{inv.retailer_code}</td>
                   <td>
                     <div className="flex-gap">
+                        <button className="btn-icon" onClick={() => handleViewPdf(inv.invoice_number)} title="View PDF">
+                            <Eye size={16} className="text-primary"/>
+                        </button>
                         <button className="btn-icon" onClick={() => handleDownload(inv.invoice_number)} title="Download PDF">
                             <Download size={16}/>
                         </button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Save, AlertCircle, ShoppingCart, History, Edit, CheckCircle, X, ArrowRight, ArrowLeft, Download, ChevronsUpDown, ChevronUp, ChevronDown, Search, RefreshCw, Trash2, Printer } from "lucide-react";
+import { Save, AlertCircle, ShoppingCart, History, Edit, CheckCircle, X, ArrowRight, ArrowLeft, Download, ChevronsUpDown, ChevronUp, ChevronDown, Search, RefreshCw, Trash2, Printer, Eye } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
 import ProcessingOverlay from "../components/ProcessingOverlay";
@@ -120,7 +120,7 @@ const ErrorModal = ({ errorData, onClose, items = [] }) => {
   );
 };
 
-const HistoryView = ({ reportHistory, currency, onDownload, isAdmin, onDeleteReport, onDeleteFinance }) => (
+const HistoryView = ({ reportHistory, currency, onDownload, onView, isAdmin, onDeleteReport, onDeleteFinance }) => (
   <div className="card table-card fade-in">
      <div className="table-responsive">
         <table>
@@ -152,6 +152,9 @@ const HistoryView = ({ reportHistory, currency, onDownload, isAdmin, onDeleteRep
                   </td>
                   <td>
                     <div className="flex-gap">
+                        <button className="btn-icon" onClick={() => onView(report.report_date)} title="View PDF">
+                            <Eye size={16} className="text-primary"/>
+                        </button>
                         <button className="btn-icon" onClick={() => onDownload(report.report_date)} title="Download PDF">
                             <Download size={16}/>
                         </button>
@@ -1200,6 +1203,20 @@ const SellReport = () => {
     }
   };
 
+  const handleViewPdf = async (reportDate) => {
+    try {
+      const res = await fetch(`${API_BASE}/reports/sell-reports/${reportDate}/pdf`, {
+        headers: { "Authorization": token }
+      });
+      if (!res.ok) throw new Error("Failed to load PDF");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (err) {
+      toast.error("Failed to view PDF: " + err.message);
+    }
+  };
+
   return (
     <div className="sell-report-page">
       {isProcessing && <ProcessingOverlay message="Submitting Daily Report..." />}
@@ -1230,7 +1247,7 @@ const SellReport = () => {
         </div>
       </header>
       {error && <div className="error-banner"><AlertCircle size={16}/> {error}</div>}
-      {view === "history" ? <HistoryView reportHistory={reportHistory} currency={currency} onDownload={handleDownload} isAdmin={isAdmin} onDeleteReport={handleDeleteReport} onDeleteFinance={handleDeleteFinance} /> : 
+      {view === "history" ? <HistoryView reportHistory={reportHistory} currency={currency} onDownload={handleDownload} onView={handleViewPdf} isAdmin={isAdmin} onDeleteReport={handleDeleteReport} onDeleteFinance={handleDeleteFinance} /> : 
         <ReportForm  
           view={view} reportDate={reportDate} reportExistsForDate={reportExistsForDate} user={user} setReportDate={setReportDate} 
           lastInvoiceDate={lastInvoiceDate} loading={loading} processedItems={processedItems} handleInputChange={handleInputChange} 

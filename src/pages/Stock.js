@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Search, RefreshCw, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Edit3, Download } from "lucide-react";
+import { Search, RefreshCw, AlertCircle, ChevronUp, ChevronDown, ChevronsUpDown, Edit3, Download, Eye } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
 import { toast } from "react-hot-toast";
@@ -49,6 +49,28 @@ const Stock = () => {
       toast.error(err.message || "Unable to download PDF.");
     } finally {
       setDownloadingPdf(false);
+    }
+  };
+
+  const handleViewPdf = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/stock/pdf`, {
+        method: "GET",
+        headers: {
+          Authorization: token,
+        },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to load stock PDF");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (err) {
+      toast.error(err.message || "Unable to view PDF.");
     }
   };
 
@@ -257,6 +279,9 @@ const Stock = () => {
                 <p className="text-muted">Real-time view of your warehouse stock.</p>
             </div>
             <div className="flex-align-center gap-2">
+                <button className="btn-secondary" onClick={handleViewPdf}>
+                    <Eye size={16} /> View PDF
+                </button>
                 <button className="btn-secondary" onClick={handleDownloadPdf} disabled={downloadingPdf}>
                     <Download size={16} className={downloadingPdf ? "animate-pulse" : ""} /> 
                     {downloadingPdf ? "Downloading..." : "Download PDF"}
