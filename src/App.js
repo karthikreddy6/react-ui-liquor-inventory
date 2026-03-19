@@ -9,6 +9,7 @@ import Stock from "./pages/Stock";
 import Admin from "./pages/Admin";
 import SellReport from "./pages/SellReport";
 import Finance from "./pages/Finance";
+import Analytics from "./pages/Analytics";
 import Customize from "./pages/Customize";
 import CustomListView from "./pages/CustomListView";
 import CustomBrandName from "./pages/CustomBrandName";
@@ -51,6 +52,7 @@ function App() {
             <Route path="stock" element={<Stock />} />
             <Route path="sell-report" element={<SellReport />} />
             <Route path="finance" element={<Finance />} />
+            <Route path="analytics" element={<Analytics />} />
             <Route path="customize" element={<Customize />} />
             <Route path="customize/list-view" element={<CustomListView />} />
             <Route path="customize/brand-name" element={<CustomBrandName />} />

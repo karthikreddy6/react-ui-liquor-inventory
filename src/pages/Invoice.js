@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Upload, AlertTriangle, Eye, EyeOff, History, Download, Trash2, Edit3, CheckCircle } from "lucide-react";
+import { Upload, AlertTriangle, Eye, EyeOff, History, Download, Trash2, Edit3, CheckCircle, FileText } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { API_BASE } from "../apiConfig";
 import ProcessingOverlay from "../components/ProcessingOverlay";
+import StatementModal from "../components/StatementModal";
 import { toast } from "react-hot-toast";
 
 const ErrorModal = ({ errorData, onClose }) => {
@@ -108,6 +109,32 @@ const Invoice = () => {
   const [search, setSearch] = useState("");
   const [showRaw, setShowRaw] = useState(false);
   const [uploadInputKey, setUploadInputKey] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleStatementAction = async (from, to, type) => {
+    const url = `${API_BASE}/reports/invoices/pdf?date_from=${from}&date_to=${to}`;
+    try {
+      const res = await fetch(url, { headers: { "Authorization": token } });
+      if (!res.ok) throw new Error("Failed to generate statement");
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      if (type === 'view') {
+        window.open(blobUrl, "_blank");
+      } else {
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `invoices_${from}_to_${to}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
+        a.remove();
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
 
   const resetUploadForm = () => {
     setFile(null);
@@ -389,18 +416,18 @@ const Invoice = () => {
                   <td>
                     <div className="flex-gap">
                         <button className="btn-icon" onClick={() => handleViewPdf(inv.invoice_number)} title="View PDF">
-                            <Eye size={16} className="text-primary"/>
+                            <Eye size={20} className="text-primary"/>
                         </button>
                         <button className="btn-icon" onClick={() => handleDownload(inv.invoice_number)} title="Download PDF">
-                            <Download size={16}/>
+                            <Download size={20}/>
                         </button>
                         {isAdmin && (
                             <>
                                 <button className="btn-icon" onClick={() => handleEditInvoice(inv)} title="Edit Invoice">
-                                    <Edit3 size={16} className="text-primary"/>
+                                    <Edit3 size={20} className="text-primary"/>
                                 </button>
                                 <button className="btn-icon text-danger" onClick={() => handleDeleteInvoice(inv.invoice_number)} title="Delete Invoice">
-                                    <Trash2 size={16}/>
+                                    <Trash2 size={20}/>
                                 </button>
                             </>
                         )}
@@ -421,6 +448,12 @@ const Invoice = () => {
     <div className="invoice-page">
       {isProcessing && <ProcessingOverlay message={processingMsg} />}
       {detailedError && <ErrorModal errorData={detailedError} onClose={() => setDetailedError(null)} />}
+      <StatementModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onAction={handleStatementAction}
+        title="Generate Invoice Statement"
+      />
       <header className="page-header">
         <div className="header-content">
           <div>
@@ -428,6 +461,11 @@ const Invoice = () => {
             <p className="text-muted">Upload and track purchase invoices.</p>
           </div>
           <div className="flex-gap">
+            {view === "history" && (
+              <button className="btn-secondary" onClick={() => setIsModalOpen(true)}>
+                <FileText size={16}/> Generate Statement
+              </button>
+            )}
             {view === "upload" ? (
               <button className="btn-secondary" onClick={() => setView("history")}>
                 <History size={16}/> View History
