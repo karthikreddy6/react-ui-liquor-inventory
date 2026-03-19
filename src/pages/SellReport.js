@@ -7,21 +7,30 @@ import { toast } from "react-hot-toast";
 
 // Date Helpers
 const normalizeDate = (dateStr) => {
-  if (!dateStr) return "";
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  const months = {
-    Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
-    Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12"
-  };
-  const parts = dateStr.split("-");
-  if (parts.length === 3) {
-    if (parts[0].length === 4) return dateStr;
-    const day = parts[0].padStart(2, "0");
-    const month = months[parts[1]] || "01";
-    const year = parts[2];
-    return `${year}-${month}-${day}`;
+  if (!dateStr || typeof dateStr !== 'string') return "";
+  const trimmed = dateStr.trim();
+  
+  // 1. Try to find a date in YYYY-MM-DD format (ISO)
+  const isoMatch = trimmed.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2].padStart(2, "0")}-${isoMatch[3].padStart(2, "0")}`;
   }
-  return dateStr;
+  
+  // 2. Try to find a date in DD-MMM-YYYY format (e.g., 30-Nov-2025)
+  const dmyMatch = trimmed.match(/(\d{1,2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{4})/i);
+  if (dmyMatch) {
+    const months = { Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06", Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12" };
+    const monthKey = dmyMatch[2].charAt(0).toUpperCase() + dmyMatch[2].slice(1).toLowerCase();
+    return `${dmyMatch[3]}-${months[monthKey] || "01"}-${dmyMatch[1].padStart(2, "0")}`;
+  }
+
+  // 3. Try DD-MM-YYYY format
+  const dmyNumericMatch = trimmed.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+  if (dmyNumericMatch) {
+    return `${dmyNumericMatch[3]}-${dmyNumericMatch[2].padStart(2, "0")}-${dmyNumericMatch[1].padStart(2, "0")}`;
+  }
+
+  return "";
 };
 
 const formatDateForDisplay = (dateStr) => {
@@ -31,7 +40,8 @@ const formatDateForDisplay = (dateStr) => {
   if (parts.length !== 3) return normalized;
   const [year, month, day] = parts;
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${day}-${monthNames[parseInt(month) - 1] || month}-${year}`;
+  const monthIdx = parseInt(month) - 1;
+  return `${day.padStart(2, "0")}-${monthNames[monthIdx] || month}-${year}`;
 };
 
 const isISODate = (value) => /^\d{4}-\d{2}-\d{2}$/.test((value || "").trim());
@@ -524,7 +534,7 @@ const ReportForm = ({
   submitting, setView, step, setStep, settlement, setSettlement,
   sortConfig, handleSort, getSortIcon, search, setSearch,
   nextStepError, disableNextStep, previousReportDate,
-  sortMode, setSortMode
+  sortMode, setSortMode, baseReportDate
 }) => {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -559,7 +569,7 @@ const ReportForm = ({
                             <label className="d-block mb-1">Select Report Date:</label>
                             <div className="flex-gap align-center">
                                 <input type="date" className="form-control" value={reportDate} onChange={(e) => setReportDate(e.target.value)} />
-                                <span className="text-small text-muted">Last Invoice: <strong>{formatDateForDisplay(lastInvoiceDate)}</strong></span>
+                                <span className="text-small text-muted">Reference Date: <strong>{formatDateForDisplay(baseReportDate)}</strong></span>
                             </div>
                         </div>
                         <div className="flex-gap align-center" style={{ marginLeft: '1rem' }}>
@@ -581,8 +591,8 @@ const ReportForm = ({
                                 </button>
                             </div>
                         </div>
-                        {reportDate && lastInvoiceDate && (normalizeDate(reportDate) < normalizeDate(lastInvoiceDate) || normalizeDate(reportDate) > normalizeDate(todayStr)) && (
-                            <div className="text-danger text-small"><AlertCircle size={14} /> Date must be between {formatDateForDisplay(lastInvoiceDate)} and {formatDateForDisplay(todayStr)}.</div>
+                        {reportDate && baseReportDate && (normalizeDate(reportDate) < normalizeDate(baseReportDate) || normalizeDate(reportDate) > normalizeDate(todayStr)) && (
+                            <div className="text-danger text-small"><AlertCircle size={14} /> Date must be between {formatDateForDisplay(baseReportDate)} and {formatDateForDisplay(todayStr)}.</div>
                         )}
                     </div>
                 </div>
@@ -675,7 +685,7 @@ const ReportForm = ({
                             {nextStepError && (
                               <div className="text-danger text-small">{nextStepError}</div>
                             )}
-                            <button className="btn-primary" onClick={goToStep2} disabled={disableNextStep || (view === 'create' && (normalizeDate(reportDate) < normalizeDate(lastInvoiceDate) || normalizeDate(reportDate) > normalizeDate(todayStr)))}>
+                            <button className="btn-primary" onClick={goToStep2} disabled={disableNextStep || (view === 'create' && (normalizeDate(reportDate) < normalizeDate(baseReportDate) || normalizeDate(reportDate) > normalizeDate(todayStr)))}>
                                 Next: Settlement <ArrowRight size={18} className="ml-2"/>
                             </button>
                         </div>
@@ -724,6 +734,19 @@ const SellReport = () => {
   });
   const [sortConfig, setSortConfig] = useState([]);
   const [search, setSearch] = useState("");
+
+  const latestReportDate = useMemo(() => {
+    if (!Array.isArray(reportHistory) || reportHistory.length === 0) return "";
+    return reportHistory
+      .map(r => normalizeDate(r.report_date))
+      .filter(isISODate)
+      .sort()
+      .pop() || "";
+  }, [reportHistory]);
+
+  const baseReportDate = useMemo(() => {
+    return latestReportDate || normalizeDate(lastInvoiceDate);
+  }, [latestReportDate, lastInvoiceDate]);
 
   const handleDeleteReport = async (date) => {
     if (!window.confirm(`Permanently delete Sell Report for ${date}?`)) return;
@@ -829,7 +852,6 @@ const SellReport = () => {
       const data = await res.json();
       if (data.latest_invoice_date) {
         setLastInvoiceDate(data.latest_invoice_date);
-        if (!isEdit) setReportDate(normalizeDate(data.latest_invoice_date));
       }
       if (data.last_balance_amount !== undefined) {
         setSettlement(prev => ({ ...prev, lastBalance: data.last_balance_amount }));
@@ -843,6 +865,14 @@ const SellReport = () => {
   }, [token, logout]);
 
   useEffect(() => { if (token) { fetchHistory(); fetchPrepareData(view==="edit"); } }, [token, view, fetchHistory, fetchPrepareData]);
+
+  useEffect(() => {
+    if (view === "create" && !reportDate && baseReportDate) {
+      setReportDate(baseReportDate);
+    } else if (view === "edit" && latestReportDate) {
+      setReportDate(latestReportDate);
+    }
+  }, [view, reportDate, baseReportDate, latestReportDate]);
 
   const handleInputChange = (id, field, value) => {
     setItems(prev => prev.map(item => item.stock_id === id ? { ...item, [field]: value } : item));
@@ -1081,19 +1111,25 @@ const SellReport = () => {
             ? cashEntries.reduce((sum, entry) => sum + entry.amount, 0)
             : (Number(settlement.cash) || 0);
 
+          // Build finance payload - only include entries with both date and positive amount
           const financePayload = {
             report_date: apiReportDate,
-            phonepay_entries: phonepayEntries,
-            cash_entries: cashEntries,
-            expenses: settlement.expenses.map((e) => ({ name: e.name.trim(), amount: Number(e.amount) || 0 })),
-            outside_income: settlement.outside_income.map((i) => ({ name: i.name.trim(), amount: Number(i.amount) || 0 }))
+            phonepay_entries: phonepayEntries.filter(e => e.date && e.amount > 0),
+            cash_entries: cashEntries.filter(e => e.date && e.amount > 0),
+            expenses: settlement.expenses
+              .filter(e => e.name.trim() && (Number(e.amount) || 0) > 0)
+              .map((e) => ({ name: e.name.trim(), amount: Number(e.amount) || 0 })),
+            outside_income: settlement.outside_income
+              .filter(i => i.name.trim() && (Number(i.amount) || 0) > 0)
+              .map((i) => ({ name: i.name.trim(), amount: Number(i.amount) || 0 }))
           };
 
-          if (phonepayEntries.length === 0) {
+          // If entries arrays are empty, provide fallback top-level fields for compatibility
+          if (financePayload.phonepay_entries.length === 0) {
             financePayload.upi_phonepay = Number(settlement.upi_phonepay) || 0;
           }
 
-          if (cashEntries.length === 0) {
+          if (financePayload.cash_entries.length === 0) {
             financePayload.cash = effectiveCash;
           }
 
@@ -1206,6 +1242,7 @@ const SellReport = () => {
           nextStepError={nextStepError} disableNextStep={disableNextStep}
           previousReportDate={previousReportDate}
           sortMode={sortMode} setSortMode={setSortMode}
+          baseReportDate={baseReportDate}
         />}
     </div>
   );

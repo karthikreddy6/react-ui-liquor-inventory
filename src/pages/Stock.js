@@ -161,10 +161,12 @@ const Stock = () => {
         setStock(data);
         
         const totalCases = data.reduce((sum, item) => sum + (Number(item.total_cases) || 0), 0);
+        const totalBottles = data.reduce((sum, item) => sum + (Number(item.total_bottles) || 0), 0);
         const totalValuation = data.reduce((sum, item) => sum + (Number(item.total_amount) || 0), 0);
         
         setSummary({
           total_cases_all_items: totalCases,
+          total_bottles_all_items: totalBottles,
           total_price_all_items: totalValuation,
           last_updated_item_name: "Calculated from list" 
         });
@@ -271,8 +273,8 @@ const Stock = () => {
       {summary && (
         <div className="summary-cards">
           <div className="card summary-item">
-            <span className="label">Total Cases</span>
-            <span className="value">{number.format(summary.total_cases_all_items || 0)}</span>
+            <span className="label">Total Bottles</span>
+            <span className="value">{number.format(summary.total_bottles_all_items || 0)}</span>
           </div>
           <div className="card summary-item">
             <span className="label">Total Valuation</span>

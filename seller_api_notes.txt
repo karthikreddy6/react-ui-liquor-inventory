@@ -37,3 +37,35 @@ Errors
 - 400 if available_cases is missing or invalid
 - 400 if stock lookup keys are incomplete
 - 404 if stock item not found
+
+3) Daily Sell Report & Finance Workflow
+
+• POST /seller/sell-report
+  This creates the stock sell report for a specific date (e.g., 2025-12-01).
+  It does NOT include finance details like PhonePe, Cash, Income, or Expenses.
+
+• POST /seller/sell-finance
+  To make financial details appear in the PDF report, you MUST submit this for the same report_date.
+
+  Example JSON for POST /seller/sell-finance:
+  {
+    "report_date": "2025-12-01",
+    "phonepay_entries": [
+      { "date": "2025-12-01", "amount": 25000 }
+    ],
+    "cash_entries": [
+      { "date": "2025-12-01", "amount": 12000 }
+    ],
+    "outside_income": [
+      { "name": "Extra Income", "amount": 3000 }
+    ],
+    "expenses": [
+      { "name": "Transport", "amount": 1500 },
+      { "name": "Food", "amount": 800 }
+    ]
+  }
+
+Flow:
+1. POST /seller/sell-report (Stock data)
+2. POST /seller/sell-finance (Financial data)
+3. GET /reports/sell-reports/[report_date]/pdf (Generate PDF)
