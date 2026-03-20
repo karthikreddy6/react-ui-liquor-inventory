@@ -455,6 +455,7 @@ const SellReport = () => {
                 settlement={settlement} setSettlement={setSettlement} totalSellAmount={totalSellAmount}
                 currency={currency} setStep={setStep} handleFullSubmit={handleFullSubmit} submitting={submitting}
                 reportDate={reportDate} previousReportDate={previousReportDate} lastInvoiceDate={lastInvoiceDate}
+                baseReportDate={baseReportDate}
               />
             )}
           </div>

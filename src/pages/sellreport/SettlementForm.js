@@ -4,9 +4,9 @@ import { formatDateForDisplay, normalizeDate, isISODate, preventWheelNumberChang
 
 const SettlementForm = ({
   settlement, setSettlement, totalSellAmount, currency, setStep, handleFullSubmit,
-  submitting, reportDate, previousReportDate, lastInvoiceDate
+  submitting, reportDate, previousReportDate, lastInvoiceDate, baseReportDate
 }) => {
-  const minFinanceEntryDate = normalizeDate(previousReportDate || lastInvoiceDate || reportDate || "");
+  const minFinanceEntryDate = normalizeDate(previousReportDate || baseReportDate || reportDate || "");
   const maxCollectionDate = normalizeDate(reportDate || "");
 
   const phonepayEntries = settlement.phonepay_entries || [];
