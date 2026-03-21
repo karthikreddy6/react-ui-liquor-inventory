@@ -1875,12 +1875,12 @@ tr:last-child td {
 
   /* Make item names larger and extra bold, keep code small */
   .sell-table td:nth-child(2) .fw-bold {
-    font-size: 12pt !important;
+    font-size: 10pt !important;
     font-weight: 900 !important;
   }
 
   .sell-table td:nth-child(2) .text-muted {
-    font-size: 7.5pt !important;
+    font-size: 7pt !important;
     font-weight: 500 !important;
   }
 
@@ -1919,7 +1919,7 @@ tr:last-child td {
 
   /* Specific column width adjustments for A4 */
   .sell-table th:nth-child(1) { width: 25px; } /* # */
-  .sell-table th:nth-child(2) { width: auto; } /* Brand Name */
+  .sell-table th:nth-child(2) { width: 140px; } /* Brand Name - Significantly reduced */
   .sell-table th:nth-child(3) { width: 35px; } /* Type */
   .sell-table th:nth-child(4) { width: 40px; } /* Pk/ML */
   .sell-table th:nth-child(5) { width: 40px; } /* Open */
@@ -1929,7 +1929,7 @@ tr:last-child td {
   .sell-table th:nth-child(9) { width: 40px; } /* Bt */
   .sell-table th:nth-child(10) { width: 45px; } /* Sold */
   .sell-table th:nth-child(11) { width: 50px; } /* MRP */
-  .sell-table th:nth-child(12) { width: 70px; } /* Amount */
+  .sell-table th:nth-child(12) { width: 60px; } /* Amount - Reduced */
 
   .highlight-bg {
     background-color: #eff6ff !important;
