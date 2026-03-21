@@ -127,9 +127,19 @@ const StockEntryForm = ({
                       <td className="text-center highlight-bg">{item.total_cases}/{item.total_bottles_remainder}</td>
                       <td className="p-1"><input type="number" className={`form-control compact ${item.isError ? "border-danger" : ""}`} value={item.closing_cases} onWheel={preventWheelNumberChange} onChange={(e) => handleInputChange(item.stock_id, 'closing_cases', e.target.value)} /></td>
                       <td className="p-1"><input type="number" className={`form-control compact ${item.isError ? "border-danger" : ""}`} value={item.closing_bottles} onWheel={preventWheelNumberChange} onChange={(e) => handleInputChange(item.stock_id, 'closing_bottles', e.target.value)} /></td>
-                      <td className="text-center fw-bold text-primary">{item.hasEntry ? number.format(item.sellBottles) : "-"}</td>
+                      <td className="text-center fw-bold text-primary">
+                        <span className="no-print">{item.hasEntry ? number.format(item.sellBottles) : "-"}</span>
+                        <span className="print-only" style={{ display: 'none' }}>
+                          {item.hasEntry && item.sellBottles !== 0 ? number.format(Math.abs(item.sellBottles)) : ""}
+                        </span>
+                      </td>
                       <td>{number.format(item.display_rate || 0)}</td>
-                      <td className="fw-bold">{item.hasEntry ? currency.format(item.sellAmount) : "-"}</td>
+                      <td className="fw-bold">
+                        <span className="no-print">{item.hasEntry ? currency.format(item.sellAmount) : "-"}</span>
+                        <span className="print-only" style={{ display: 'none' }}>
+                          {item.hasEntry && item.sellAmount !== 0 ? currency.format(Math.abs(item.sellAmount)) : ""}
+                        </span>
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -139,9 +149,19 @@ const StockEntryForm = ({
               <tfoot>
                 <tr className="table-footer">
                   <td colSpan="9" className="text-right fw-bold">Total Sales:</td>
-                  <td className="text-center fw-bold">{number.format(totalSellItems)}</td>
+                  <td className="text-center fw-bold">
+                    <span className="no-print">{number.format(totalSellItems)}</span>
+                    <span className="print-only" style={{ display: 'none' }}>
+                      {totalSellItems !== 0 ? number.format(Math.abs(totalSellItems)) : ""}
+                    </span>
+                  </td>
                   <td></td>
-                  <td className="fw-bold text-lg">{currency.format(totalSellAmount)}</td>
+                  <td className="fw-bold text-lg">
+                    <span className="no-print">{currency.format(totalSellAmount)}</span>
+                    <span className="print-only" style={{ display: 'none' }}>
+                      {totalSellAmount !== 0 ? currency.format(Math.abs(totalSellAmount)) : ""}
+                    </span>
+                  </td>
                 </tr>
               </tfoot>
             </table>
