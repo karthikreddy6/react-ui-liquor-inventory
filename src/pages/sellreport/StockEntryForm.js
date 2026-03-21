@@ -27,17 +27,11 @@ const StockEntryForm = ({
       <div className="card form-header-card mb-4">
         <div className="flex-between">
           <div className="form-group mb-0">
-            <label className="d-block mb-1">Select Report Date:</label>
+            <label className="d-block mb-1">Report Date:</label>
             <div className="flex-gap align-center">
-              <input
-                type="date"
-                className="form-control"
-                value={reportDate}
-                min={baseReportDate}
-                max={todayStr}
-                onChange={(e) => handleDateChange(e.target.value)}
-              />
-              <span className="text-small text-muted">Min Allowed: <strong>{formatDateForDisplay(baseReportDate)}</strong></span>
+              <div className="fw-bold text-primary" style={{ fontSize: '1.1rem', padding: '0.4rem 0.75rem', background: '#eff6ff', borderRadius: '6px', border: '1px solid #dbeafe' }}>
+                {formatDateForDisplay(reportDate)}
+              </div>
             </div>
           </div>
           <div className="flex-gap align-center" style={{ marginLeft: '1rem' }}>

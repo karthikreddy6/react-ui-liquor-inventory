@@ -9,6 +9,8 @@ import AnalysisKPIs from "./analysis/AnalysisKPIs";
 import AnalysisAlerts from "./analysis/AnalysisAlerts";
 import RequiredStockTable from "./analysis/RequiredStockTable";
 import StockTables from "./analysis/StockTables";
+import InventoryAnalysis from "./analysis/InventoryAnalysis";
+import SalesAnalysis from "./analysis/SalesAnalysis";
 import FinancePanel from "./analysis/FinancePanel";
 import FinanceAnalytics from "./analysis/FinanceAnalytics";
 
@@ -17,7 +19,7 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [analysis, setAnalysis] = useState(null);
-  const [activeTab, setActiveTab] = useState("stock"); // stock, finance
+  const [activeTab, setActiveTab] = useState("overview"); // overview, inventory, sales, demand, finance
   
   // Filter States
   const [lowStockThreshold, setLowStockThreshold] = useState("");
@@ -83,48 +85,69 @@ const Analytics = () => {
           </div>
           
           <div className="flex-gap">
-            <div className="btn-group" style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
+            <div className="btn-group" style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '8px', overflowX: 'auto', maxWidth: '100%' }}>
               <button 
-                className={`btn-toggle-small ${activeTab === 'stock' ? 'active' : ''}`}
-                onClick={() => setActiveTab('stock')}
-                style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: activeTab === 'stock' ? 'white' : 'transparent', boxShadow: activeTab === 'stock' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
+                className={`btn-toggle-small ${activeTab === 'overview' ? 'active' : ''}`}
+                onClick={() => setActiveTab('overview')}
+                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: activeTab === 'overview' ? 'white' : 'transparent', boxShadow: activeTab === 'overview' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: '600', whiteSpace: 'nowrap' }}
               >
-                <Package size={16} /> Stock
+                Overview
+              </button>
+              <button 
+                className={`btn-toggle-small ${activeTab === 'inventory' ? 'active' : ''}`}
+                onClick={() => setActiveTab('inventory')}
+                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: activeTab === 'inventory' ? 'white' : 'transparent', boxShadow: activeTab === 'inventory' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: '600', whiteSpace: 'nowrap' }}
+              >
+                Inventory
+              </button>
+              <button 
+                className={`btn-toggle-small ${activeTab === 'sales' ? 'active' : ''}`}
+                onClick={() => setActiveTab('sales')}
+                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: activeTab === 'sales' ? 'white' : 'transparent', boxShadow: activeTab === 'sales' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: '600', whiteSpace: 'nowrap' }}
+              >
+                Sales
+              </button>
+              <button 
+                className={`btn-toggle-small ${activeTab === 'demand' ? 'active' : ''}`}
+                onClick={() => setActiveTab('demand')}
+                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: activeTab === 'demand' ? 'white' : 'transparent', boxShadow: activeTab === 'demand' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: '600', whiteSpace: 'nowrap' }}
+              >
+                Demand
               </button>
               <button 
                 className={`btn-toggle-small ${activeTab === 'finance' ? 'active' : ''}`}
                 onClick={() => setActiveTab('finance')}
-                style={{ padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: activeTab === 'finance' ? 'white' : 'transparent', boxShadow: activeTab === 'finance' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}
+                style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: activeTab === 'finance' ? 'white' : 'transparent', boxShadow: activeTab === 'finance' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', fontWeight: '600', whiteSpace: 'nowrap' }}
               >
-                <Wallet size={16} /> Finance
+                Finance
               </button>
             </div>
 
-            <div className="flex-gap align-center ml-2" style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '1rem' }}>
+            <div className="flex-gap align-center ml-2 no-mobile" style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '1rem' }}>
                 <div className="filter-group" style={{ display: 'flex', flexDirection: 'column' }}>
-                   <label style={{ fontSize: '0.65rem', fontWeight: '800', color: '#94a3b8' }}>LOW (CS)</label>
+                   <label style={{ fontSize: '0.6rem', fontWeight: '800', color: '#94a3b8' }}>LOW (CS)</label>
                    <input 
                       type="number" 
                       className="form-control compact"
-                      style={{ width: '70px', padding: '2px 8px' }}
+                      style={{ width: '60px', padding: '2px 6px', fontSize: '0.8rem' }}
                       value={lowStockThreshold} 
                       placeholder={analysis.thresholds?.low_stock_cases || "2"}
                       onChange={(e) => setLowStockThreshold(e.target.value)}
                    />
                 </div>
                 <div className="filter-group" style={{ display: 'flex', flexDirection: 'column' }}>
-                   <label style={{ fontSize: '0.65rem', fontWeight: '800', color: '#94a3b8' }}>HIGH (CS)</label>
+                   <label style={{ fontSize: '0.6rem', fontWeight: '800', color: '#94a3b8' }}>HIGH (CS)</label>
                    <input 
                       type="number" 
                       className="form-control compact"
-                      style={{ width: '70px', padding: '2px 8px' }}
+                      style={{ width: '60px', padding: '2px 6px', fontSize: '0.8rem' }}
                       value={highStockThreshold} 
                       placeholder={analysis.thresholds?.high_stock_cases || "25"}
                       onChange={(e) => setHighStockThreshold(e.target.value)}
                    />
                 </div>
                 <button className="btn-secondary" onClick={fetchAnalysis} title="Refresh">
-                    <RefreshCw size={16} />
+                    <RefreshCw size={14} />
                 </button>
             </div>
           </div>
@@ -133,19 +156,45 @@ const Analytics = () => {
 
       {error && <div className="error-banner mb-4"><AlertCircle size={18} /> {error}</div>}
 
-      {activeTab === "stock" ? (
-        <div className="stock-analysis-tab">
-          <AnalysisKPIs stockSummary={analysis.stock.summary} financeSummary={analysis.finance.summary} />
-          <RequiredStockTable requiredStock={analysis.stock.required_stock} />
-          <AnalysisAlerts messages={analysis.messages} />
-          <div className="analysis-main-layout">
-            <StockTables stock={analysis.stock} />
-            <FinancePanel finance={analysis.finance} />
+      <div className="analysis-content-area">
+        {activeTab === "overview" && (
+          <div className="overview-tab fade-in">
+            <AnalysisKPIs stockSummary={analysis.stock.summary} financeSummary={analysis.finance.summary} />
+            <AnalysisAlerts messages={analysis.messages} />
+            <div className="analysis-main-layout">
+               <div className="card p-4">
+                  <h3 className="mb-3">Stock Overview</h3>
+                  <div className="finance-kv-list">
+                     <div><span>Total Bottles</span><strong>{analysis.stock.summary.total_stock_bottles}</strong></div>
+                     <div><span>Equivalent Cases</span><strong>{analysis.stock.summary.total_stock_equivalent_cases.toFixed(2)}</strong></div>
+                     <div><span>Brands with Recent Sales</span><strong>{analysis.stock.summary.brands_with_recent_sales}</strong></div>
+                     <div><span>Normal Stock Count</span><strong>{analysis.stock.summary.normal_stock_count}</strong></div>
+                  </div>
+               </div>
+               <FinancePanel finance={analysis.finance} />
+            </div>
           </div>
-        </div>
-      ) : (
-        <FinanceAnalytics finance={analysis.finance} summary={analysis.stock.summary} />
-      )}
+        )}
+
+        {activeTab === "inventory" && (
+          <InventoryAnalysis stock={analysis.stock} />
+        )}
+
+        {activeTab === "sales" && (
+          <SalesAnalysis stock={analysis.stock} />
+        )}
+
+        {activeTab === "demand" && (
+          <div className="demand-tab fade-in">
+            <RequiredStockTable requiredStock={analysis.stock.required_stock} />
+            <StockTables stock={analysis.stock} showPredictionsOnly={true} />
+          </div>
+        )}
+
+        {activeTab === "finance" && (
+          <FinanceAnalytics finance={analysis.finance} summary={analysis.stock.summary} />
+        )}
+      </div>
 
       <style>{`
          .analysis-dashboard { 

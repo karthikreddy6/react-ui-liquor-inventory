@@ -12,6 +12,7 @@ import HistoryView from "./sellreport/HistoryView";
 import StockEntryForm from "./sellreport/StockEntryForm";
 import SettlementForm from "./sellreport/SettlementForm";
 import ErrorModal from "./sellreport/ErrorModal";
+import DateSelectionModal from "./sellreport/DateSelectionModal";
 
 const SellReport = () => {
   const { token, user, logout } = useAuth();
@@ -39,6 +40,7 @@ const SellReport = () => {
   const [sortMode, setSortMode] = useState("default");
   const [sortConfig, setSortConfig] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
 
   const handleStatementAction = async (from, to, type) => {
     const url = `${API_BASE}/reports/sell-reports/pdf?date_from=${from}&date_to=${to}`;
@@ -63,6 +65,18 @@ const SellReport = () => {
     } catch (err) {
       toast.error(err.message);
     }
+  };
+
+  const handleCreateClick = () => {
+    setIsDateModalOpen(true);
+  };
+
+  const handleConfirmDate = (selectedDate) => {
+    setIsDateModalOpen(false);
+    setReportDate(selectedDate);
+    fetchPrepareData(selectedDate);
+    setView("create");
+    setStep(1);
   };
   
   // Settlement State
@@ -128,10 +142,12 @@ const SellReport = () => {
     setLoading(true); setError("");
     try {
       let url = `${API_BASE}/seller/sell-report/prepare`;
+      const dateToUse = targetDate || (view === "create" ? reportDate : null);
+      
       if (view === "edit") {
         url += "?mode=edit";
-      } else if (targetDate) {
-        url += `?report_date=${targetDate}`;
+      } else if (dateToUse) {
+        url += `?report_date=${dateToUse}`;
       }
 
       const res = await fetch(url, { headers: { "Authorization": token } });
@@ -393,6 +409,12 @@ const SellReport = () => {
         onAction={handleStatementAction}
         title="Generate Sell Statement"
       />
+      <DateSelectionModal 
+        isOpen={isDateModalOpen} 
+        onClose={() => setIsDateModalOpen(false)} 
+        onConfirm={handleConfirmDate}
+        baseReportDate={baseReportDate}
+      />
       <header className="page-header">
         <div className="header-content">
           <div><h1>Daily Sell Report</h1><p className="text-muted">{new Date().toDateString()}</p></div>
@@ -403,7 +425,7 @@ const SellReport = () => {
                       <FileText size={16}/> Generate Statement
                     </button>
                     {user?.role === "supervisor" && (
-                      <button className="btn-primary" onClick={() => { setView("create"); setStep(1); }}>
+                      <button className="btn-primary" onClick={handleCreateClick}>
                         <ShoppingCart size={16}/> Create Report
                       </button>
                     )}

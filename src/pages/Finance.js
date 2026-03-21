@@ -202,10 +202,15 @@ const Finance = () => {
           <div className="card">
             <div className="table-header"><h3>All-Time Totals</h3></div>
             <div className="finance-kv-list">
-              <div><span>Total Invoice Value</span><strong>{currency.format(overview.totals?.all_invoices_total_invoice_value || 0)}</strong></div>
               <div><span>Net Invoice Value</span><strong>{currency.format(overview.totals?.all_invoices_net_invoice_value || 0)}</strong></div>
+              <div><span>Special Excise Cess</span><strong>{currency.format(overview.totals?.all_invoices_special_excise_cess || 0)}</strong></div>
+              <div><span>Retail Shop Excise Tax</span><strong>{currency.format(overview.totals?.all_invoices_retail_shop_excise_turnover_tax || 0)}</strong></div>
+              <div><span>Retailer Prof. Tax</span><strong>{currency.format(overview.totals?.all_invoices_new_retailer_professional_tax || 0)}</strong></div>
+              <div><span>MRP Round Off</span><strong>{currency.format(overview.totals?.all_invoices_mrp_round_off || 0)}</strong></div>
               <div><span>Total TCS Paid</span><strong>{currency.format(overview.totals?.all_invoices_tcs || 0)}</strong></div>
-              <div className="border-top pt-2"><span>All Sell Amount</span><strong className="text-primary">{currency.format(overview.totals?.all_sell_amount || 0)}</strong></div>
+              <div className="border-top pt-2"><span>Total Invoice Value</span><strong>{currency.format(overview.totals?.all_invoices_total_invoice_value || 0)}</strong></div>
+              
+              <div className="mt-3 pt-2 border-top"><span>All Sell Amount</span><strong className="text-primary">{currency.format(overview.totals?.all_sell_amount || 0)}</strong></div>
               <div><span>Total Outstanding Balance</span><strong className={ (overview.finance[0]?.final_balance || 0) < 0 ? "text-danger" : "text-success" }>{currency.format(overview.finance[0]?.final_balance || 0)}</strong></div>
             </div>
           </div>
