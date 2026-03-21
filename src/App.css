@@ -1860,19 +1860,32 @@ tr:last-child td {
   }
 
   .sell-table {
-    font-size: 8pt !important;
+    font-size: 7.5pt !important; /* Slightly smaller base font to ensure all columns fit */
     border-collapse: collapse !important;
     width: 100% !important;
+    table-layout: fixed !important; /* Forces layout to respect widths */
   }
 
   .sell-table th, .sell-table td {
     border: 1px solid #000 !important;
-    padding: 4pt !important;
+    padding: 3pt 2pt !important;
+    word-wrap: break-word !important;
+    overflow: hidden !important;
+  }
+
+  /* Make numbers and inputs larger and bold */
+  .sell-table td:nth-child(n+4), 
+  .sell-table input,
+  .sell-table .text-lg,
+  .sell-table tfoot td {
+    font-size: 9pt !important;
+    font-weight: 700 !important;
   }
 
   .sell-table thead th {
     background-color: #f1f5f9 !important;
     color: black !important;
+    font-weight: 700 !important;
     -webkit-print-color-adjust: exact;
   }
 
@@ -1888,22 +1901,39 @@ tr:last-child td {
     padding: 0 !important;
     width: 100% !important;
     text-align: center !important;
-    font-size: 8pt !important;
     color: black !important;
     -webkit-appearance: none;
     box-shadow: none !important;
   }
 
-  /* Show input value as text during print if needed */
-  /* For now, the user fills it, so it might be better to just show the value if we can */
-  /* But since they are input fields, window.print() usually shows the value. */
-  
+  /* Specific column width adjustments for A4 */
+  .sell-table th:nth-child(1) { width: 25px; } /* # */
+  .sell-table th:nth-child(2) { width: auto; } /* Brand Name */
+  .sell-table th:nth-child(3) { width: 35px; } /* Type */
+  .sell-table th:nth-child(4) { width: 40px; } /* Pk/ML */
+  .sell-table th:nth-child(5) { width: 40px; } /* Open */
+  .sell-table th:nth-child(6) { width: 40px; } /* Add */
+  .sell-table th:nth-child(7) { width: 40px; } /* Total */
+  .sell-table th:nth-child(8) { width: 40px; } /* Cs */
+  .sell-table th:nth-child(9) { width: 40px; } /* Bt */
+  .sell-table th:nth-child(10) { width: 45px; } /* Sold */
+  .sell-table th:nth-child(11) { width: 50px; } /* MRP */
+  .sell-table th:nth-child(12) { width: 70px; } /* Amount */
+
   .highlight-bg {
     background-color: #eff6ff !important;
     -webkit-print-color-adjust: exact;
   }
 
+  /* Highlight Closing columns in print */
+  .sell-table td:nth-child(8),
+  .sell-table td:nth-child(9) {
+    background-color: #f9fafb !important;
+    -webkit-print-color-adjust: exact;
+  }
+
   @page {
-    margin: 0.5cm;
+    size: A4;
+    margin: 0.8cm;
   }
 }

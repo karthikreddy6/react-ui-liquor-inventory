@@ -235,7 +235,7 @@ const CustomBrandName = () => {
                     type="text" className="form-control" placeholder="e.g. BP, RS, 8PM..." 
                     value={newAlias} onChange={(e) => setNewAlias(e.target.value.toUpperCase())}
                     style={{ paddingLeft: '2.8rem', borderRadius: '12px', height: '48px', fontSize: '1.1rem', fontWeight: '700' }}
-                    autoFocus maxLength={20}
+                    autoFocus maxLength={60}
                   />
                 </div>
                 {aliases[showEditModal.brand_number] && (
