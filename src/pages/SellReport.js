@@ -223,7 +223,6 @@ const SellReport = () => {
     if (!Number.isFinite(closingCases) || !Number.isFinite(closingBottles)) return { hasEntry: true, isInvalid: true, message: "Numeric values required." };
     if (!Number.isInteger(closingCases) || !Number.isInteger(closingBottles)) return { hasEntry: true, isInvalid: true, message: "Whole numbers required." };
     if (closingCases < 0 || closingBottles < 0) return { hasEntry: true, isInvalid: true, message: "Cannot be negative." };
-    if (closingBottles >= packSize) return { hasEntry: true, isInvalid: true, message: `Bottles must be < ${packSize}.` };
 
     const availBt = ((item.opening_cases || 0) * packSize + (item.opening_bottles || 0)) +
       ((item.invoice_added_cases || 0) * packSize + (item.invoice_added_bottles || 0));
@@ -323,10 +322,27 @@ const SellReport = () => {
       const apiDate = normalizeDate(reportDate);
       
       const submitLogic = async () => {
+          const normalizedItems = activeItems.map(item => {
+            const packSize = Math.max(1, Number(item.pack_size_case) || 1);
+            const rawCases = Number(item.closing_cases) || 0;
+            const rawBottles = Number(item.closing_bottles) || 0;
+            
+            // Background conversion: e.g., 100 bottles -> 1 case 4 bottles (if pack size is 96)
+            const extraCases = Math.floor(rawBottles / packSize);
+            const finalBottles = rawBottles % packSize;
+            const finalCases = rawCases + extraCases;
+
+            return {
+              stock_id: item.stock_id,
+              closing_cases: finalCases,
+              closing_bottles: finalBottles
+            };
+          });
+
           const reportRes = await fetch(`${API_BASE}${view === "edit" ? "/seller/sell-report/edit-last" : "/seller/sell-report"}`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": token },
-            body: JSON.stringify({ report_date: apiDate, items: activeItems.map(item => ({ stock_id: item.stock_id, closing_cases: Number(item.closing_cases) || 0, closing_bottles: Number(item.closing_bottles) || 0 })) })
+            body: JSON.stringify({ report_date: apiDate, items: normalizedItems })
           });
           if (!reportRes.ok) throw await reportRes.json();
 
